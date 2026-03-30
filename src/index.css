@@ -1,0 +1,175 @@
+/* DO NOT CHANGE */
+@import "tailwindcss";
+@import "tw-animate-css";
+@custom-variant dark (&:is(.dark *));
+
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap');
+
+/* DO NOT CHANGE */
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* Cipher CV - Swiss Brutalist Privacy Theme */
+:root {
+  --radius: 0rem;
+  --background: #0d0d0d;
+  --foreground: #f0ede8;
+  --card: #161616;
+  --card-foreground: #f0ede8;
+  --popover: #161616;
+  --popover-foreground: #f0ede8;
+  --primary: #ff4d00;
+  --primary-foreground: #0d0d0d;
+  --secondary: #252525;
+  --secondary-foreground: #f0ede8;
+  --muted: #1e1e1e;
+  --muted-foreground: #a8a49e;
+  --accent: #ff4d00;
+  --accent-foreground: #0d0d0d;
+  --destructive: #ff4d00;
+  --border: #383838;
+  --input: #252525;
+  --ring: #ff4d00;
+  --chart-1: #ff4d00;
+  --chart-2: #f0ede8;
+  --chart-3: #a8a49e;
+  --chart-4: #383838;
+  --chart-5: #555555;
+  --sidebar: #161616;
+  --sidebar-foreground: #f0ede8;
+  --sidebar-primary: #ff4d00;
+  --sidebar-primary-foreground: #0d0d0d;
+  --sidebar-accent: #252525;
+  --sidebar-accent-foreground: #f0ede8;
+  --sidebar-border: #383838;
+  --sidebar-ring: #ff4d00;
+}
+
+.dark {
+  --background: #0d0d0d;
+  --foreground: #f0ede8;
+  --card: #161616;
+  --card-foreground: #f0ede8;
+  --popover: #161616;
+  --popover-foreground: #f0ede8;
+  --primary: #ff4d00;
+  --primary-foreground: #0d0d0d;
+  --secondary: #252525;
+  --secondary-foreground: #f0ede8;
+  --muted: #1e1e1e;
+  --muted-foreground: #a8a49e;
+  --accent: #ff4d00;
+  --accent-foreground: #0d0d0d;
+  --destructive: #ff4d00;
+  --border: #383838;
+  --input: #252525;
+  --ring: #ff4d00;
+  --chart-1: #ff4d00;
+  --chart-2: #f0ede8;
+  --chart-3: #a8a49e;
+  --chart-4: #383838;
+  --chart-5: #555555;
+  --sidebar: #161616;
+  --sidebar-foreground: #f0ede8;
+  --sidebar-primary: #ff4d00;
+  --sidebar-primary-foreground: #0d0d0d;
+  --sidebar-accent: #252525;
+  --sidebar-accent-foreground: #f0ede8;
+  --sidebar-border: #383838;
+  --sidebar-ring: #ff4d00;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  button:not([disabled]),
+  [role="button"]:not([disabled]) {
+    cursor: pointer;
+  }
+}
+
+/* Cipher CV Utilities */
+.font-mono-cipher {
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  font-size: 0.8125rem; /* 13px — up from 12px */
+  line-height: 1.6;
+}
+
+.encrypted-block {
+  background: #0d0d0d;
+  color: #ff4d00;
+  font-family: 'IBM Plex Mono', monospace;
+  border: 1px solid #383838;
+  padding: 3px 8px;
+  font-size: 0.8125rem;
+}
+
+.brutalist-border {
+  border: 1px solid #383838;
+}
+
+.accent-flash {
+  transition: background-color 100ms ease, color 100ms ease;
+}
+
+.accent-flash:hover {
+  background-color: #ff4d00;
+  color: #0d0d0d;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #0d0d0d;
+}
+::-webkit-scrollbar-thumb {
+  background: #383838;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ff4d00;
+}
