@@ -1,9 +1,10 @@
+import { keccak256, encodePacked, toHex } from "viem";
+
 export interface EncryptedProfile {
   id: string;
   hash: string;
   type: "candidate" | "employer";
   label: string;
-  // Hidden values - never displayed directly
   _minSalary?: number;
   _maxSalary?: number;
   _experience?: number;
@@ -106,13 +107,81 @@ export const PRESET_MATCHES = [
   },
 ];
 
+/**
+ * Generate a deterministic commitment hash from a value using keccak256.
+ * This is a real cryptographic hash — not random.
+ */
+export function commitValue(value: number | string, salt?: string): string {
+  const saltBytes = salt ?? "cipher-cv-v2";
+  return keccak256(encodePacked(["string", "string"], [String(value), saltBytes]));
+}
+
+/**
+ * Generate a random nonce hash (for display purposes only — not a commitment).
+ * Uses crypto.getRandomValues for real randomness.
+ */
 export function generateHash(): string {
-  const chars = "0123456789abcdef";
-  let hash = "0x";
-  for (let i = 0; i < 16; i++) {
-    hash += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return hash;
+  const buf = new Uint8Array(16);
+  crypto.getRandomValues(buf);
+  return "0x" + Array.from(buf).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Compute a wallet-bound profile commitment hash.
+ */
+export function commitProfile(walletAddress: string, minSalary: number, maxSalary: number, experience: number, skillCount: number): string {
+  return keccak256(encodePacked(
+    ["address", "uint256", "uint256", "uint256", "uint256"],
+    [walletAddress as `0x${string}`, BigInt(minSalary), BigInt(maxSalary), BigInt(experience), BigInt(skillCount)]
+  ));
+}
+
+/**
+ * Compute a wallet-bound job posting commitment hash.
+ */
+export function commitJobPosting(walletAddress: string, budget: number, requiredExp: number, skillCount: number): string {
+  return keccak256(encodePacked(
+    ["address", "uint256", "uint256", "uint256"],
+    [walletAddress as `0x${string}`, BigInt(budget), BigInt(requiredExp), BigInt(skillCount)]
+  ));
+}
+
+/**
+ * Compute a salary commitment hash.
+ */
+export function commitSalary(walletAddress: string, salary: number): string {
+  return keccak256(encodePacked(["address", "uint256"], [walletAddress as `0x${string}`, BigInt(salary)]));
+}
+
+/**
+ * Compute an experience commitment hash.
+ */
+export function commitExperience(walletAddress: string, years: number): string {
+  return keccak256(encodePacked(["address", "uint256"], [walletAddress as `0x${string}`, BigInt(years)]));
+}
+
+/**
+ * Compute a skills commitment hash.
+ */
+export function commitSkills(walletAddress: string, skills: string[]): string {
+  return keccak256(encodePacked(["address", "string"], [walletAddress as `0x${string}`, skills.sort().join(",")]));
+}
+
+/**
+ * Compute a market data commitment hash.
+ */
+export function commitMarketData(walletAddress: string, role: string, targetIncrease: number): string {
+  return keccak256(encodePacked(["address", "string", "uint256"], [walletAddress as `0x${string}`, role, BigInt(targetIncrease)]));
+}
+
+/**
+ * Compute an escrow commitment hash.
+ */
+export function commitEscrow(walletAddress: string, targetRole: string, salaryMin: number, salaryMax: number): string {
+  return keccak256(encodePacked(
+    ["address", "string", "uint256", "uint256"],
+    [walletAddress as `0x${string}`, targetRole, BigInt(salaryMin), BigInt(salaryMax)]
+  ));
 }
 
 export function computeMatch(
@@ -124,13 +193,13 @@ export function computeMatch(
 ): MatchResult {
   const overlap = Math.min(candidateMax, employerBudget) - Math.max(candidateMin, employerBudget * 0.85);
   const expMatch = candidateExp >= requiredExp;
-  
+
   if (overlap <= 0 || !expMatch) {
     return {
       compatible: false,
       score: 0,
-      candidateHash: generateHash(),
-      employerHash: generateHash(),
+      candidateHash: toHex(new Uint8Array(8).fill(0)),
+      employerHash: toHex(new Uint8Array(8).fill(0)),
     };
   }
 
@@ -143,7 +212,7 @@ export function computeMatch(
     compatible: true,
     score: Math.min(99, Math.max(60, score)),
     suggestedSalary,
-    candidateHash: generateHash(),
-    employerHash: generateHash(),
+    candidateHash: commitValue(candidateMin, "candidate"),
+    employerHash: commitValue(employerBudget, "employer"),
   };
 }

@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { WalletButton } from "@/components/WalletButton";
+import { NotificationCenter } from "@/components/NotificationCenter";
 import {
-  Lock,
   User,
   Briefcase,
   Zap,
@@ -15,16 +15,24 @@ import {
   X,
   LayoutDashboard,
   FileText,
+  BarChart2,
+  Key,
+  Vote,
+  Search,
 } from "lucide-react";
 
 const NAV_ITEMS = [
-  { path: "/", label: "Landing", icon: Home, external: false },
-  { path: "/app", label: "Dashboard", icon: LayoutDashboard, external: false },
-  { path: "/app/candidate", label: "Candidate", icon: User, external: false },
-  { path: "/app/employer", label: "Employer", icon: Briefcase, external: false },
-  { path: "/app/matches", label: "Match Engine", icon: Zap, external: false },
-  { path: "/app/protocol", label: "Protocol", icon: Code2, external: false },
-  { path: "/app/whitepaper", label: "Whitepaper", icon: FileText, external: false },
+  { path: "/", label: "Landing", icon: Home },
+  { path: "/app", label: "Dashboard", icon: LayoutDashboard },
+  { path: "/app/candidate", label: "Candidate", icon: User },
+  { path: "/app/employer", label: "Employer", icon: Briefcase },
+  { path: "/app/matches", label: "Match Engine", icon: Zap },
+  { path: "/app/vault", label: "ZK Vault", icon: Key },
+  { path: "/app/analytics", label: "Analytics", icon: BarChart2 },
+  { path: "/app/proofs", label: "Proof Explorer", icon: Search },
+  { path: "/app/governance", label: "Governance", icon: Vote },
+  { path: "/app/protocol", label: "Protocol", icon: Code2 },
+  { path: "/app/whitepaper", label: "Whitepaper", icon: FileText },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -139,15 +147,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
             <nav className="flex-1 py-4 space-y-1 px-2">
               {NAV_ITEMS.map((item) => {
-                  const active = item.path === "/app"
-                    ? location.pathname === "/app"
-                    : location.pathname === item.path;
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      onClick={() => setMobileOpen(false)}
+                const active = item.path === "/app"
+                  ? location.pathname === "/app"
+                  : location.pathname === item.path;
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setMobileOpen(false)}
                     className={`flex items-center gap-3 px-2 py-2.5 transition-all duration-100 ${
                       active
                         ? "bg-primary text-primary-foreground"
@@ -184,6 +192,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
               Fhenix Testnet
             </div>
+            <NotificationCenter />
             <WalletButton />
           </div>
         </header>

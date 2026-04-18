@@ -10,7 +10,11 @@
 
 import type * as auth from "../auth.js";
 import type * as auth_emailOtp from "../auth/emailOtp.js";
+import type * as governance from "../governance.js";
 import type * as http from "../http.js";
+import type * as matches from "../matches.js";
+import type * as notifications from "../notifications.js";
+import type * as profiles from "../profiles.js";
 import type * as users from "../users.js";
 
 import type {
@@ -22,7 +26,11 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   "auth/emailOtp": typeof auth_emailOtp;
+  governance: typeof governance;
   http: typeof http;
+  matches: typeof matches;
+  notifications: typeof notifications;
+  profiles: typeof profiles;
   users: typeof users;
 }>;
 

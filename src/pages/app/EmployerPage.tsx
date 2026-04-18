@@ -3,9 +3,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router";
 import { AppLayout } from "./AppLayout";
 import { EncryptedInput } from "@/components/EncryptedInput";
-import { generateHash } from "@/lib/demoData";
+import { ConsentReveal } from "@/components/ConsentReveal";
+import { SkillHeatmap } from "@/components/SkillHeatmap";
+import { FHECircuit } from "@/components/FHECircuit";
+import { commitJobPosting } from "@/lib/demoData";
 import { CheckCircle, Clock, XCircle, Eye, EyeOff, Lock } from "lucide-react";
 import { useAccount, useConnect } from "wagmi";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { toast } from "sonner";
 
 function ConnectWalletButton({ className }: { className?: string }) {
   const { connect, connectors } = useConnect();
@@ -22,76 +28,39 @@ function ConnectWalletButton({ className }: { className?: string }) {
 
 type MatchStatus = "pending" | "matched" | "rejected";
 
-interface CandidateRecord {
-  id: string;
-  hash: string;
-  label: string;
-  status: MatchStatus;
-  score?: number;
-  salary?: number;
-  timestamp: string;
-}
-
-const MOCK_CANDIDATES: CandidateRecord[] = [
-  {
-    id: "c1",
-    hash: "0x7f3a9b2c4e1d8f5a",
-    label: "Candidate #A7F3",
-    status: "matched",
-    score: 94,
-    salary: 125000,
-    timestamp: "2 hours ago",
-  },
-  {
-    id: "c2",
-    hash: "0x3d8e2f1a9c7b4e6d",
-    label: "Candidate #3D8E",
-    status: "pending",
-    timestamp: "4 hours ago",
-  },
-  {
-    id: "c3",
-    hash: "0x5c9f2e8a1b4d7e3c",
-    label: "Candidate #5C9F",
-    status: "rejected",
-    timestamp: "8 hours ago",
-  },
-  {
-    id: "c4",
-    hash: "0x1a9c7b4e6d3d8e2f",
-    label: "Candidate #1A9C",
-    status: "matched",
-    score: 81,
-    salary: 118000,
-    timestamp: "1 day ago",
-  },
-  {
-    id: "c5",
-    hash: "0x8a1b4d7e3c5c9f2e",
-    label: "Candidate #8A1B",
-    status: "pending",
-    timestamp: "1 day ago",
-  },
-];
-
 const REQUIRED_SKILLS = [
   "Solidity", "Rust", "TypeScript", "React", "Node.js",
   "Python", "Go", "ZK Proofs", "FHE", "Smart Contracts",
   "DeFi", "Layer 2", "Cryptography",
 ];
 
+const CANDIDATE_SKILLS_DEMO = ["Solidity", "TypeScript", "React", "FHE", "Smart Contracts", "DeFi"];
+
 export default function EmployerPage() {
-  const { isConnected } = useAccount();
+  const { address, isConnected } = useAccount();
   const [budget, setBudget] = useState(130000);
   const [requiredExp, setRequiredExp] = useState(5);
-  const [minExp, setMinExp] = useState(3);
+  const [minSkillLevel, setMinSkillLevel] = useState(7);
   const [selectedSkills, setSelectedSkills] = useState<string[]>(["Solidity", "TypeScript"]);
-  const [jobHash] = useState(generateHash);
-  const [jobPosted, setJobPosted] = useState(false);
+  const jobHash = address ? commitJobPosting(address, budget, requiredExp, selectedSkills.length) : "0x0000000000000000";
   const [posting, setPosting] = useState(false);
-  const [candidates, setCandidates] = useState<CandidateRecord[]>(MOCK_CANDIDATES);
   const [revealedCandidates, setRevealedCandidates] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTab] = useState<"post" | "pipeline">("post");
+  const [activeTab, setActiveTab] = useState<"job" | "pipeline" | "skills" | "circuit">("job");
+  const [consentStates, setConsentStates] = useState<Record<string, { candidate: boolean; employer: boolean }>>({});
+  const [circuitRunning, setCircuitRunning] = useState(false);
+
+  const submitJob = useMutation(api.profiles.submitJobPosting);
+  const consentReveal = useMutation(api.matches.consentReveal);
+  const existingJob = useQuery(
+    api.profiles.getJobPosting,
+    address ? { walletAddress: address } : "skip"
+  );
+  const employerMatches = useQuery(
+    api.matches.getEmployerMatches,
+    address ? { walletAddress: address } : "skip"
+  );
+
+  const jobPosted = existingJob?.submitted ?? false;
 
   const toggleSkill = (skill: string) => {
     setSelectedSkills(prev =>
@@ -99,13 +68,40 @@ export default function EmployerPage() {
     );
   };
 
-  const handlePostJob = () => {
+  const handlePostJob = async () => {
+    if (!address) return;
     setPosting(true);
-    setTimeout(() => {
+    try {
+      const jHash = commitJobPosting(address, budget, requiredExp, selectedSkills.length);
+      const bHash = commitJobPosting(address, budget, 0, 0);
+      const eHash = commitJobPosting(address, 0, requiredExp, 0);
+      await submitJob({
+        walletAddress: address,
+        jobHash: jHash,
+        budgetHash: bHash,
+        expHash: eHash,
+        requiredSkillCount: selectedSkills.length,
+        requiredExpYears: requiredExp,
+      });
+      toast.success("Job spec encrypted & committed");
+    } catch {
+      toast.error("Failed to post job");
+    } finally {
       setPosting(false);
-      setJobPosted(true);
-      setActiveTab("pipeline");
-    }, 2200);
+    }
+  };
+
+  const handleEmployerConsent = async (matchId: string) => {
+    try {
+      await consentReveal({ matchId: matchId as any, role: "employer" });
+      setConsentStates(prev => ({
+        ...prev,
+        [matchId]: { ...prev[matchId], employer: true },
+      }));
+      toast.success("Consent signed");
+    } catch {
+      toast.error("Failed to sign consent");
+    }
   };
 
   const toggleReveal = (id: string) => {
@@ -123,7 +119,6 @@ export default function EmployerPage() {
     return <XCircle className="w-3.5 h-3.5 text-destructive" />;
   };
 
-  // Wallet gate
   if (!isConnected) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
@@ -145,7 +140,7 @@ export default function EmployerPage() {
                 Employer Dashboard
               </h2>
               <p className="font-mono-cipher text-xs text-muted-foreground leading-relaxed">
-                Connect your wallet to post encrypted job specs and view matched candidates.
+                Connect your wallet to access the encrypted employer dashboard.
               </p>
             </div>
             <ConnectWalletButton className="w-full font-mono-cipher text-sm bg-primary text-primary-foreground py-4 uppercase tracking-widest hover:bg-foreground hover:text-background transition-all duration-100 font-bold" />
@@ -158,87 +153,74 @@ export default function EmployerPage() {
     );
   }
 
+  const matches = employerMatches ?? [];
+
   return (
     <AppLayout>
       <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="space-y-1">
           <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">
-            Employer Dashboard
+            Employer Dashboard — Wave 2
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground" style={{ fontFamily: "Space Grotesk" }}>
             Encrypted Job Spec
           </h1>
           <p className="text-muted-foreground text-sm">
-            Post encrypted job requirements. Candidates are matched without revealing your budget or their salary.
+            Post encrypted job requirements. Candidates are matched without revealing your budget or their identity.
           </p>
         </div>
 
         {/* Tabs */}
         <div className="flex border-b border-border">
-          {(["post", "pipeline"] as const).map(tab => (
+          {[
+            { id: "job" as const, label: "Job Spec" },
+            { id: "pipeline" as const, label: `Pipeline (${matches.length})` },
+            { id: "skills" as const, label: "Skill Matrix" },
+            { id: "circuit" as const, label: "FHE Circuit" },
+          ].map(tab => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`font-mono-cipher text-xs uppercase tracking-widest px-6 py-3 border-b-2 transition-all duration-100 ${
-                activeTab === tab
-                  ? "border-primary text-foreground"
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-3 font-mono-cipher text-xs uppercase tracking-widest border-b-2 transition-all duration-100 ${
+                activeTab === tab.id
+                  ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              {tab === "post" ? "Post Job" : `Pipeline (${candidates.length})`}
+              {tab.label}
             </button>
           ))}
         </div>
 
         <AnimatePresence mode="wait">
-          {activeTab === "post" ? (
+          {activeTab === "job" && (
             <motion.div
-              key="post"
+              key="job"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
+              exit={{ opacity: 0 }}
               className="grid grid-cols-1 lg:grid-cols-3 gap-6"
             >
-              {/* Job spec form */}
               <div className="lg:col-span-2 space-y-6">
                 <div className="border border-border bg-card">
                   <div className="flex items-center justify-between px-6 py-4 border-b border-border">
                     <span className="font-mono-cipher text-xs uppercase tracking-widest text-muted-foreground">
-                      Constraint Set Configuration
+                      Job Constraint Configuration
                     </span>
                     <span className="encrypted-block">{jobHash.slice(0, 12)}...</span>
                   </div>
                   <div className="p-6 space-y-6">
-                    <EncryptedInput
-                      label="Compensation Budget"
-                      min={40000}
-                      max={400000}
-                      value={budget}
-                      onChange={setBudget}
-                    />
-                    <EncryptedInput
-                      label="Required Experience (Years)"
-                      min={0}
-                      max={20}
-                      value={requiredExp}
-                      onChange={setRequiredExp}
-                    />
-                    <EncryptedInput
-                      label="Minimum Experience Floor"
-                      min={0}
-                      max={20}
-                      value={minExp}
-                      onChange={setMinExp}
-                    />
+                    <EncryptedInput label="Compensation Budget" min={40000} max={400000} value={budget} onChange={setBudget} />
+                    <EncryptedInput label="Required Experience (Years)" min={0} max={20} value={requiredExp} onChange={setRequiredExp} />
+                    <EncryptedInput label="Minimum Skill Level" min={1} max={10} value={minSkillLevel} onChange={setMinSkillLevel} />
                   </div>
                 </div>
 
-                {/* Required skills */}
                 <div className="border border-border bg-card">
                   <div className="px-6 py-4 border-b border-border">
                     <span className="font-mono-cipher text-xs uppercase tracking-widest text-muted-foreground">
-                      Required Skill Vector — Encrypted
+                      Required Skills — Encrypted
                     </span>
                   </div>
                   <div className="p-6">
@@ -269,33 +251,11 @@ export default function EmployerPage() {
                   {posting
                     ? "Encrypting Job Spec..."
                     : jobPosted
-                    ? "✓ Job Spec Encrypted & Live"
+                    ? "✓ Job Spec Encrypted & Committed"
                     : "Encrypt & Post Job Spec"}
                 </motion.button>
-
-                {posting && (
-                  <div className="border border-border p-4 space-y-2">
-                    {[
-                      "Generating constraint encryption...",
-                      "Encrypting budget range...",
-                      "Encrypting skill requirements...",
-                      "Broadcasting to Fhenix...",
-                    ].map((step, i) => (
-                      <motion.div
-                        key={step}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.45 }}
-                        className="font-mono-cipher text-xs text-muted-foreground flex items-center gap-2"
-                      >
-                        <span className="text-primary animate-pulse">▋</span> {step}
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
               </div>
 
-              {/* Stats */}
               <div className="space-y-4">
                 <div className="border border-border bg-card p-6 space-y-4">
                   <div className="font-mono-cipher text-xs uppercase tracking-widest text-muted-foreground">
@@ -303,11 +263,11 @@ export default function EmployerPage() {
                   </div>
                   <div className="space-y-3">
                     {[
+                      { label: "Company Identity", value: "[ENCRYPTED]", ok: true },
                       { label: "Budget", value: "[ENCRYPTED]", ok: true },
+                      { label: "Required Skills", value: `${selectedSkills.length} vectors`, ok: true },
                       { label: "Experience Req.", value: "[ENCRYPTED]", ok: true },
-                      { label: "Skills", value: `${selectedSkills.length} required`, ok: true },
-                      { label: "Bias Indicators", value: "None exposed", ok: true },
-                      { label: "On-chain", value: jobPosted ? "Live" : "Draft", ok: jobPosted },
+                      { label: "On-chain", value: jobPosted ? "Committed" : "Pending", ok: jobPosted },
                     ].map(item => (
                       <div key={item.label} className="flex items-center justify-between">
                         <span className="font-mono-cipher text-xs text-muted-foreground">{item.label}</span>
@@ -325,10 +285,10 @@ export default function EmployerPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     {[
-                      { label: "Total", value: candidates.length },
-                      { label: "Matched", value: candidates.filter(c => c.status === "matched").length },
-                      { label: "Pending", value: candidates.filter(c => c.status === "pending").length },
-                      { label: "Rejected", value: candidates.filter(c => c.status === "rejected").length },
+                      { label: "Total", value: matches.length },
+                      { label: "Matched", value: matches.filter(m => m.status === "matched").length },
+                      { label: "Pending", value: matches.filter(m => m.status === "pending").length },
+                      { label: "Rejected", value: matches.filter(m => m.status === "rejected").length },
                     ].map(stat => (
                       <div key={stat.label} className="border border-border p-3 text-center">
                         <div className="text-xl font-bold text-foreground" style={{ fontFamily: "Space Grotesk" }}>
@@ -341,113 +301,126 @@ export default function EmployerPage() {
                 </div>
               </div>
             </motion.div>
-          ) : (
+          )}
+
+          {activeTab === "pipeline" && (
             <motion.div
               key="pipeline"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
+              exit={{ opacity: 0 }}
               className="space-y-4"
             >
-              <div className="border border-border bg-card">
-                <div className="px-6 py-4 border-b border-border flex items-center justify-between">
-                  <span className="font-mono-cipher text-xs uppercase tracking-widest text-muted-foreground">
-                    Candidate Pipeline — All Identities Encrypted
-                  </span>
-                  <span className="font-mono-cipher text-xs text-muted-foreground">
-                    {candidates.length} candidates
-                  </span>
+              {matches.length === 0 ? (
+                <div className="border border-border p-12 text-center">
+                  <div className="font-mono-cipher text-xs text-muted-foreground">
+                    No candidates yet. Post your job spec to enter the matching pool.
+                  </div>
                 </div>
-                <div className="divide-y divide-border">
-                  {candidates.map((candidate, i) => (
-                    <motion.div
-                      key={candidate.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      className="px-6 py-4 flex items-center justify-between gap-4"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        {statusIcon(candidate.status)}
-                        <div className="min-w-0">
+              ) : (
+                matches.map((match, i) => (
+                  <motion.div
+                    key={match._id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="border border-border bg-card"
+                  >
+                    <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {statusIcon(match.status as MatchStatus)}
+                        <div>
                           <div className="font-mono-cipher text-xs text-foreground">
-                            {candidate.label}
+                            Candidate {match.candidateWallet.slice(0, 6)}...{match.candidateWallet.slice(-4)}
                           </div>
-                          <div className="font-mono-cipher text-xs text-muted-foreground">
-                            {candidate.hash.slice(0, 14)}... · {candidate.timestamp}
+                          <div className="font-mono-cipher text-muted-foreground" style={{ fontSize: "10px" }}>
+                            {match.candidateWallet}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        {candidate.status === "matched" && (
-                          <AnimatePresence mode="wait">
-                            {revealedCandidates.has(candidate.id) ? (
-                              <motion.div
-                                key="revealed"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="text-right"
-                              >
-                                <div className="font-mono-cipher text-xs text-primary">{candidate.score}% match</div>
-                                <div className="font-mono-cipher text-xs text-foreground">${candidate.salary?.toLocaleString()}</div>
-                              </motion.div>
-                            ) : (
-                              <motion.div
-                                key="hidden"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="text-right"
-                              >
-                                <div className="encrypted-block">██% match</div>
-                                <div className="encrypted-block mt-1">$███,███</div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        )}
-                        {candidate.status === "rejected" && (
-                          <div className="font-mono-cipher text-xs text-muted-foreground">
-                            No overlap
-                          </div>
-                        )}
-                        {candidate.status === "pending" && (
-                          <div className="font-mono-cipher text-xs text-muted-foreground animate-pulse">
-                            Computing...
-                          </div>
-                        )}
-                        {candidate.status === "matched" && (
-                          <button
-                            onClick={() => toggleReveal(candidate.id)}
-                            className="text-muted-foreground hover:text-foreground transition-colors"
-                          >
-                            {revealedCandidates.has(candidate.id) ? (
-                              <EyeOff className="w-3.5 h-3.5" />
-                            ) : (
-                              <Eye className="w-3.5 h-3.5" />
-                            )}
+                      <div className="flex items-center gap-3">
+                        {match.status === "matched" && (
+                          <button onClick={() => toggleReveal(match._id)} className="text-muted-foreground hover:text-foreground transition-colors">
+                            {revealedCandidates.has(match._id) ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                           </button>
                         )}
+                        <span className={`font-mono-cipher text-xs px-2 py-1 border ${
+                          match.status === "matched" ? "border-primary text-primary" :
+                          match.status === "rejected" ? "border-border text-muted-foreground" :
+                          "border-border text-muted-foreground"
+                        }`}>
+                          {match.status.toUpperCase()}
+                        </span>
                       </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Privacy note */}
-              <div className="border border-border p-4 bg-card">
-                <div className="font-mono-cipher text-xs text-muted-foreground space-y-1">
-                  <div className="text-foreground mb-2">Privacy Guarantees Active</div>
-                  {[
-                    "Candidate identities remain encrypted until mutual consent",
-                    "Salary figures revealed only upon match confirmation",
-                    "Rejection provides zero information about candidate constraints",
-                    "All matching computed on Fhenix fhEVM — no plaintext exposure",
-                  ].map(item => (
-                    <div key={item} className="flex items-start gap-2">
-                      <span className="text-primary">—</span>
-                      <span>{item}</span>
                     </div>
-                  ))}
+                    {match.status === "matched" && (
+                      <div className="p-6">
+                        <ConsentReveal
+                          matchId={match._id}
+                          candidateConsented={consentStates[match._id]?.candidate ?? match.candidateConsented}
+                          employerConsented={consentStates[match._id]?.employer ?? match.employerConsented}
+                          salaryRevealed={match.salaryRevealed ?? false}
+                          suggestedSalary={match.suggestedSalary}
+                          score={match.score}
+                          onCandidateConsent={() => {}}
+                          onEmployerConsent={() => handleEmployerConsent(match._id)}
+                          role="employer"
+                        />
+                      </div>
+                    )}
+                  </motion.div>
+                ))
+              )}
+            </motion.div>
+          )}
+
+          {activeTab === "skills" && (
+            <motion.div
+              key="skills"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+            >
+              <SkillHeatmap
+                candidateSkills={CANDIDATE_SKILLS_DEMO}
+                employerSkills={selectedSkills}
+              />
+            </motion.div>
+          )}
+
+          {activeTab === "circuit" && (
+            <motion.div
+              key="circuit"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="space-y-4"
+            >
+              <div className="flex justify-end">
+                <button
+                  onClick={() => { setCircuitRunning(true); setTimeout(() => setCircuitRunning(false), 3000); }}
+                  className="font-mono-cipher text-xs bg-primary text-primary-foreground px-4 py-2 uppercase tracking-widest hover:bg-foreground hover:text-background transition-all duration-100"
+                >
+                  Execute FHE Circuit →
+                </button>
+              </div>
+              <FHECircuit running={circuitRunning} />
+              <div className="border border-border bg-card p-6 space-y-3">
+                <div className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest">
+                  Circuit Inputs (Encrypted)
                 </div>
+                {[
+                  { label: "candidateSalaryMin", value: "[euint256]" },
+                  { label: "candidateSalaryMax", value: "[euint256]" },
+                  { label: "employerBudget", value: "[euint256]" },
+                  { label: "candidateExp", value: "[euint256]" },
+                  { label: "requiredExp", value: "[euint256]" },
+                ].map(item => (
+                  <div key={item.label} className="flex items-center justify-between">
+                    <span className="font-mono-cipher text-xs text-muted-foreground">{item.label}</span>
+                    <span className="font-mono-cipher text-xs text-primary">{item.value}</span>
+                  </div>
+                ))}
               </div>
             </motion.div>
           )}

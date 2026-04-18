@@ -13,13 +13,13 @@ interface MatchingEngineProps {
 }
 
 const COMPUTATION_STEPS = [
-  "Encrypting candidate utility curve...",
-  "Encrypting employer constraint set...",
-  "Initializing FHE circuit...",
-  "Computing encrypted intersection...",
-  "Evaluating homomorphic comparison...",
-  "Resolving encrypted salary range...",
-  "Finalizing blind match result...",
+  "@cofhe/sdk: encryptInputs([salary, exp]).execute()...",
+  "@cofhe/sdk: encryptInputs([budget, minExp]).execute()...",
+  "Initializing FHE circuit on Fhenix fhEVM...",
+  "Computing encrypted intersection via FHE.and()...",
+  "Evaluating FHE.gte(budget, candidateMin)...",
+  "Resolving ebool result — no plaintext exposed...",
+  "Finalizing blind match — decryptForView() ready...",
 ];
 
 export function MatchingEngine({ isRunning, result, onComplete }: MatchingEngineProps) {

@@ -57,7 +57,7 @@ const ARCHITECTURE_LAYERS = [
     name: "Client Layer",
     tech: "React + CoFHE SDK",
     desc: "Encrypts all sensitive inputs client-side using Fhenix's CoFHE SDK before any network transmission. Zero plaintext leaves the browser.",
-    status: "Wave 1 — Live",
+    status: "Wave 2 — Live",
   },
   {
     layer: "02",
@@ -70,7 +70,7 @@ const ARCHITECTURE_LAYERS = [
     layer: "03",
     name: "Storage Layer",
     tech: "Encrypted State",
-    desc: "All on-chain state stored as euint256 types. Salary ranges, experience, and skill vectors are never stored in plaintext.",
+    desc: "All on-chain state stored as euint32 types. Salary ranges, experience, and skill vectors are never stored in plaintext.",
     status: "Wave 2 — Deploying",
   },
   {
@@ -89,10 +89,69 @@ const ARCHITECTURE_LAYERS = [
   },
 ];
 
+const CONTRACT_SUITE = [
+  {
+    name: "CipherRegistry",
+    file: "CipherRegistry.sol",
+    desc: "Protocol address registry. Single source of truth for all deployed contract addresses. Supports upgrades, pausing, and admin transfer.",
+    envVar: "VITE_CIPHER_REGISTRY_CONTRACT",
+    wave: "Wave 2",
+  },
+  {
+    name: "CipherCV",
+    file: "CipherCV.sol",
+    desc: "Core FHE matching engine. Candidates and employers submit encrypted profiles. Compatibility computed on ciphertext via FHE.gte() and FHE.and().",
+    envVar: "VITE_CIPHER_CV_CONTRACT",
+    wave: "Wave 2",
+  },
+  {
+    name: "CipherVault",
+    file: "CipherVault.sol",
+    desc: "Encrypted credential vault. Multi-credential storage with versioning, revocation, sealed output, and access logging.",
+    envVar: "VITE_CIPHER_VAULT_CONTRACT",
+    wave: "Wave 2",
+  },
+  {
+    name: "CipherGovernance",
+    file: "CipherGovernance.sol",
+    desc: "On-chain governance with encrypted vote weights. Proposals, encrypted tallying, quorum enforcement, timelock, and parameter execution.",
+    envVar: "VITE_CIPHER_GOVERNANCE_CONTRACT",
+    wave: "Wave 2",
+  },
+  {
+    name: "CipherEscrow",
+    file: "CipherEscrow.sol",
+    desc: "Interview Insurance escrow. ETH premium with FHE-gated release. Auto-refund if interview target not met. Protocol fee on completion.",
+    envVar: "VITE_CIPHER_ESCROW_CONTRACT",
+    wave: "Wave 2",
+  },
+  {
+    name: "CipherCounterOffer",
+    file: "CipherCounterOffer.sol",
+    desc: "Counter-offer calculator. Encrypted salary vs market benchmarks. Leverage score computation. Sealed output for private viewing.",
+    envVar: "VITE_CIPHER_COUNTER_OFFER_CONTRACT",
+    wave: "Wave 2",
+  },
+  {
+    name: "CipherStealth",
+    file: "CipherStealth.sol",
+    desc: "Stealth mode employer blocklist. Encrypted blocklist/allowlist. Time-locked profiles. Domain-level blocking. Full stealth mode.",
+    envVar: "VITE_CIPHER_STEALTH_CONTRACT",
+    wave: "Wave 2",
+  },
+  {
+    name: "CipherBatchMatcher",
+    file: "CipherBatchMatcher.sol",
+    desc: "Batch tournament matching. Up to 50 candidate × employer pairs per transaction. Tournament mode for N×M matching. Gas-optimized.",
+    envVar: "VITE_CIPHER_BATCH_MATCHER_CONTRACT",
+    wave: "Wave 2",
+  },
+];
+
 const FHE_CONCEPTS = [
   {
-    term: "euint256",
-    definition: "Encrypted unsigned 256-bit integer. Stores salary, experience, and skill vectors in ciphertext form on-chain.",
+    term: "euint32",
+    definition: "Encrypted unsigned 32-bit integer. Stores salary, experience, and skill vectors in ciphertext form on-chain.",
   },
   {
     term: "ebool",
@@ -103,16 +162,24 @@ const FHE_CONCEPTS = [
     definition: "Homomorphic greater-than-or-equal comparison. Computes salary overlap without decrypting either party's range.",
   },
   {
-    term: "inEuint256",
+    term: "inEuint32",
     definition: "Input type for encrypted integers. Candidates submit their salary range as ciphertext — never plaintext.",
   },
   {
-    term: "CoFHE SDK",
-    definition: "Client-side encryption library. Encrypts inputs in the browser before transmission to the Fhenix network.",
+    term: "@cofhe/sdk",
+    definition: "Client-side encryption library. Uses builder pattern: encryptInputs().execute(), decryptForView() for UI, decryptForTx() for on-chain publishing via FHE.publishDecryptResult().",
   },
   {
     term: "Blind Match",
-    definition: "A match result computed entirely on encrypted data. The protocol knows a match exists without knowing why.",
+    definition: "A match result computed entirely on encrypted data. The protocol knows a match exists without knowing why. Reveal requires decryptForTx + FHE.publishDecryptResult() with mutual consent.",
+  },
+  {
+    term: "FHE.select()",
+    definition: "Encrypted conditional (ternary). Used in CipherCounterOffer to compute leverage scores without branching on plaintext.",
+  },
+  {
+    term: "FHE.sealoutput()",
+    definition: "Re-encrypt a ciphertext for a specific public key. Used in CipherVault and CipherCounterOffer for private sealed viewing.",
   },
 ];
 
@@ -134,17 +201,17 @@ export default function ProtocolPage() {
             Technical Architecture
           </h1>
           <p className="text-muted-foreground text-sm max-w-2xl">
-            Cipher CV is built on Fhenix's fhEVM — the first EVM-compatible blockchain with native Fully Homomorphic Encryption. Smart contracts compute on encrypted data without ever decrypting it.
+            Cipher CV is built on Fhenix's fhEVM — the first EVM-compatible blockchain with native Fully Homomorphic Encryption. 8 smart contracts compute on encrypted data without ever decrypting it.
           </p>
         </div>
 
         {/* Status banner */}
         <div className="border border-primary p-4 flex items-center justify-between flex-wrap gap-3">
           <div className="font-mono-cipher text-xs text-primary">
-            ▋ Wave 1 Active — Frontend + Demo Layer
+            ▋ Wave 2 Active — 8-Contract Protocol Suite
           </div>
           <div className="font-mono-cipher text-xs text-muted-foreground">
-            Smart contracts deploying Wave 2 · Fhenix Frontier Testnet
+            Convex backend live · Ethereum Sepolia (Chain ID: 11155111) · Deploy: npx hardhat run scripts/deploy.ts --network ethSepolia
           </div>
           <a
             href="https://docs.fhenix.zone"
@@ -154,6 +221,49 @@ export default function ProtocolPage() {
           >
             Fhenix Docs <ExternalLink className="w-3 h-3" />
           </a>
+        </div>
+
+        {/* Contract Suite */}
+        <div className="space-y-4">
+          <div className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest mb-6">
+            Contract Suite — 8 Contracts
+          </div>
+          <div className="border border-border">
+            {CONTRACT_SUITE.map((contract, i) => (
+              <motion.div
+                key={contract.name}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.07 }}
+                className={`grid grid-cols-1 md:grid-cols-4 gap-4 p-5 ${
+                  i < CONTRACT_SUITE.length - 1 ? "border-b border-border" : ""
+                } hover:bg-secondary/10 transition-colors`}
+              >
+                <div className="flex items-start gap-3">
+                  <span className="font-mono-cipher text-xl font-bold text-muted-foreground opacity-20 shrink-0">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <div>
+                    <div className="font-bold text-foreground text-sm" style={{ fontFamily: "Space Grotesk" }}>
+                      {contract.name}
+                    </div>
+                    <div className="font-mono-cipher text-xs text-primary mt-0.5">{contract.file}</div>
+                  </div>
+                </div>
+                <div className="md:col-span-2 font-mono-cipher text-xs text-muted-foreground leading-relaxed">
+                  {contract.desc}
+                </div>
+                <div className="flex flex-col items-start md:items-end gap-2">
+                  <span className="font-mono-cipher text-xs px-2 py-1 border border-primary text-primary">
+                    {contract.wave}
+                  </span>
+                  <span className="font-mono-cipher text-muted-foreground" style={{ fontSize: "9px" }}>
+                    {contract.envVar}
+                  </span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
 
         {/* Architecture layers */}
@@ -203,13 +313,13 @@ export default function ProtocolPage() {
         {/* Smart contract code */}
         <div ref={codeRef} className="space-y-4">
           <div className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest">
-            Smart Contract Preview — Wave 2
+            Smart Contract Preview — CipherCV.sol (Core)
           </div>
           <div className="border border-border bg-card">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted">
               <span className="font-mono-cipher text-xs text-muted-foreground">CipherCV.sol</span>
               <div className="flex items-center gap-3">
-                <span className="font-mono-cipher text-xs text-primary">Solidity 0.8.24</span>
+                <span className="font-mono-cipher text-xs text-primary">Solidity 0.8.19</span>
                 <span className="font-mono-cipher text-xs text-muted-foreground">Fhenix fhEVM</span>
               </div>
             </div>
@@ -272,6 +382,28 @@ export default function ProtocolPage() {
           </div>
         </div>
 
+        {/* Deploy instructions */}
+        <div className="border border-border bg-card p-6 space-y-4">
+          <div className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest">
+            Deployment Instructions
+          </div>
+          <div className="space-y-2">
+            {[
+              "1. Set DEPLOYER_PRIVATE_KEY in your environment",
+              "2. Set SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_KEY",
+              "3. Get testnet ETH from https://sepoliafaucet.com or https://faucet.quicknode.com/ethereum/sepolia",
+              "4. Run: npx hardhat run scripts/deploy.ts --network ethSepolia",
+              "5. Copy the VITE_* env vars from the output to your .env.local",
+              "6. The CipherRegistry contract auto-registers all other contracts",
+            ].map((step, i) => (
+              <div key={i} className="font-mono-cipher text-xs text-muted-foreground flex items-start gap-2">
+                <span className="text-primary shrink-0">→</span>
+                {step}
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Links */}
         <div className="border border-border p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
@@ -281,14 +413,14 @@ export default function ProtocolPage() {
               href: "https://docs.fhenix.zone",
             },
             {
-              label: "Fhenix Testnet",
-              desc: "Connect to Frontier Testnet — Chain ID 8008135",
-              href: "https://fhenix.io",
+              label: "Sepolia Faucet",
+              desc: "Get testnet ETH for Ethereum Sepolia — Chain ID 11155111",
+              href: "https://sepoliafaucet.com",
             },
             {
-              label: "FHE Whitepaper",
-              desc: "Technical overview of Fully Homomorphic Encryption on EVM",
-              href: "https://fhenix.io/whitepaper",
+              label: "Sepolia Explorer",
+              desc: "Block explorer for Ethereum Sepolia — verify transactions",
+              href: "https://sepolia.etherscan.io",
             },
           ].map(link => (
             <a

@@ -2,7 +2,6 @@ import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { Infer, v } from "convex/values";
 
-// default user roles. can add / remove based on the project as needed
 export const ROLES = {
   ADMIN: "admin",
   USER: "user",
@@ -18,26 +17,153 @@ export type Role = Infer<typeof roleValidator>;
 
 const schema = defineSchema(
   {
-    // default auth tables using convex auth.
-    ...authTables, // do not remove or modify
+    ...authTables,
 
-    // the users table is the default users table that is brought in by the authTables
     users: defineTable({
-      name: v.optional(v.string()), // name of the user. do not remove
-      image: v.optional(v.string()), // image of the user. do not remove
-      email: v.optional(v.string()), // email of the user. do not remove
-      emailVerificationTime: v.optional(v.number()), // email verification time. do not remove
-      isAnonymous: v.optional(v.boolean()), // is the user anonymous. do not remove
+      name: v.optional(v.string()),
+      image: v.optional(v.string()),
+      email: v.optional(v.string()),
+      emailVerificationTime: v.optional(v.number()),
+      isAnonymous: v.optional(v.boolean()),
+      role: v.optional(roleValidator),
+    }).index("email", ["email"]),
 
-      role: v.optional(roleValidator), // role of the user. do not remove
-    }).index("email", ["email"]), // index for the email. do not remove or modify
+    // Encrypted candidate profiles (stored as hash commitments)
+    encryptedProfiles: defineTable({
+      walletAddress: v.string(),
+      profileHash: v.string(),
+      experienceHash: v.string(),
+      salaryHash: v.string(),
+      skillsHash: v.string(),
+      skillCount: v.number(),
+      experienceYears: v.number(),
+      submitted: v.boolean(),
+      // Stealth Mode fields
+      stealthEnabled: v.optional(v.boolean()),
+      blockedDomains: v.optional(v.array(v.string())),
+      timeLockDate: v.optional(v.string()),
+    }).index("by_wallet", ["walletAddress"]),
 
-    // add other tables here
+    // Encrypted job postings
+    jobPostings: defineTable({
+      walletAddress: v.string(),
+      jobHash: v.string(),
+      budgetHash: v.string(),
+      expHash: v.string(),
+      requiredSkillCount: v.number(),
+      requiredExpYears: v.number(),
+      submitted: v.boolean(),
+    }).index("by_wallet", ["walletAddress"]),
 
-    // tableName: defineTable({
-    //   ...
-    //   // table fields
-    // }).index("by_field", ["field"])
+    // Match requests
+    matchRequests: defineTable({
+      candidateWallet: v.string(),
+      employerWallet: v.string(),
+      candidateProfileId: v.id("encryptedProfiles"),
+      jobPostingId: v.id("jobPostings"),
+      status: v.union(v.literal("pending"), v.literal("matched"), v.literal("rejected")),
+      score: v.optional(v.number()),
+      suggestedSalary: v.optional(v.number()),
+      candidateConsented: v.boolean(),
+      employerConsented: v.boolean(),
+      salaryRevealed: v.optional(v.boolean()),
+    })
+      .index("by_candidate", ["candidateWallet"])
+      .index("by_employer", ["employerWallet"])
+      .index("by_candidate_and_employer", ["candidateWallet", "employerWallet"]),
+
+    // Counter-Offer Calculator requests
+    counterOfferRequests: defineTable({
+      walletAddress: v.string(),
+      currentSalaryHash: v.string(),
+      targetIncreasePercent: v.number(),
+      yearsAtCompany: v.number(),
+      role: v.string(),
+      marketDataHash: v.string(),
+      // Result
+      status: v.union(v.literal("pending"), v.literal("complete")),
+      offersNeeded: v.optional(v.number()),
+      projectedIncrease: v.optional(v.number()),
+      negotiationScript: v.optional(v.string()),
+    }).index("by_wallet", ["walletAddress"]),
+
+    // Interview Insurance orders
+    interviewInsuranceOrders: defineTable({
+      walletAddress: v.string(),
+      escrowHash: v.string(),
+      targetRole: v.string(),
+      targetSalaryMin: v.number(),
+      targetSalaryMax: v.number(),
+      // Status
+      status: v.union(
+        v.literal("pending"),
+        v.literal("active"),
+        v.literal("interviews_scheduled"),
+        v.literal("completed"),
+        v.literal("refunded")
+      ),
+      interviewsScheduled: v.number(),
+      interviewsTarget: v.number(),
+      expiresAt: v.number(),
+      paidAt: v.optional(v.number()),
+    }).index("by_wallet", ["walletAddress"]),
+
+    // Notifications
+    notifications: defineTable({
+      walletAddress: v.string(),
+      type: v.union(
+        v.literal("match_found"),
+        v.literal("consent_received"),
+        v.literal("salary_revealed"),
+        v.literal("profile_submitted"),
+        v.literal("job_posted"),
+        v.literal("insurance_activated"),
+        v.literal("counter_offer_ready"),
+        v.literal("governance_vote"),
+        v.literal("system")
+      ),
+      title: v.string(),
+      message: v.string(),
+      read: v.boolean(),
+      relatedId: v.optional(v.string()),
+    })
+      .index("by_wallet", ["walletAddress"])
+      .index("by_wallet_and_read", ["walletAddress", "read"]),
+
+    // Governance proposals (on-chain simulation)
+    governanceProposals: defineTable({
+      proposalId: v.string(),
+      title: v.string(),
+      description: v.string(),
+      category: v.union(
+        v.literal("parameter"),
+        v.literal("upgrade"),
+        v.literal("treasury"),
+        v.literal("emergency")
+      ),
+      status: v.union(
+        v.literal("active"),
+        v.literal("passed"),
+        v.literal("rejected"),
+        v.literal("pending")
+      ),
+      votesFor: v.number(),
+      votesAgainst: v.number(),
+      quorum: v.number(),
+      endsAt: v.number(),
+      proposerWallet: v.string(),
+    }).index("by_proposal_id", ["proposalId"]),
+
+    // Governance votes
+    governanceVotes: defineTable({
+      proposalId: v.string(),
+      voterWallet: v.string(),
+      vote: v.union(v.literal("for"), v.literal("against")),
+      txHash: v.string(),
+    })
+      .index("by_proposal", ["proposalId"])
+      .index("by_voter", ["voterWallet"])
+      .index("by_proposal_and_voter", ["proposalId", "voterWallet"]),
   },
   {
     schemaValidation: false,

@@ -1,4 +1,3 @@
-import '@vly-ai/integrations';
 import '@rainbow-me/rainbowkit/styles.css';
 import { Toaster } from "@/components/ui/sonner";
 import { VlyToolbar } from "../vly-toolbar-readonly.tsx";
@@ -26,6 +25,12 @@ const MatchesPage = lazy(() => import("./pages/app/MatchesPage.tsx"));
 const ProtocolPage = lazy(() => import("./pages/app/ProtocolPage.tsx"));
 const DashboardPage = lazy(() => import("./pages/app/DashboardPage.tsx"));
 const WhitepaperPage = lazy(() => import("./pages/app/WhitepaperPage.tsx"));
+const AnalyticsPage = lazy(() => import("./pages/app/AnalyticsPage.tsx"));
+const ProofExplorerPage = lazy(() => import("./pages/app/ProofExplorerPage.tsx"));
+const VaultPage = lazy(() => import("./pages/app/VaultPage.tsx"));
+const GovernancePage = lazy(() => import("./pages/app/GovernancePage.tsx"));
+const DownloadPage = lazy(() => import("./pages/DownloadPage.tsx"));
+const DeploymentGuide = lazy(() => import("./pages/DeploymentGuide.tsx"));
 
 function RouteLoading() {
   return (
@@ -87,6 +92,12 @@ createRoot(document.getElementById("root")!).render(
                     <Route path="/app/matches" element={<MatchesPage />} />
                     <Route path="/app/protocol" element={<ProtocolPage />} />
                     <Route path="/app/whitepaper" element={<WhitepaperPage />} />
+                    <Route path="/app/analytics" element={<AnalyticsPage />} />
+                    <Route path="/app/proofs" element={<ProofExplorerPage />} />
+                    <Route path="/app/vault" element={<VaultPage />} />
+                    <Route path="/app/governance" element={<GovernancePage />} />
+                    <Route path="/download" element={<DownloadPage />} />
+                    <Route path="/deploy" element={<DeploymentGuide />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Suspense>

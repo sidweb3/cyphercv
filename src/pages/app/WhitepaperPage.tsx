@@ -127,26 +127,40 @@ function computeFullMatch(
     return FHE.and(salary, exp);
 }`;
 
+// Updated: FHE.decrypt() deprecated — now uses decryptForView (UI) or decryptForTx (on-chain)
 const REVEAL_CODE = `// Mutual consent reveal — both parties must sign
+// @cofhe/sdk: decryptForTx returns { decryptedValue, signature }
+// for on-chain verification via FHE.publishDecryptResult()
 function revealSalary(
     address candidate,
     address employer,
-    bytes calldata candidateConsent,
-    bytes calldata employerConsent
-) external returns (uint256) {
+    uint256 ctHash,
+    uint256 decryptedValue,
+    bytes calldata signature
+) external {
     // Verify both parties consented
-    require(verifyConsent(candidate, candidateConsent), "No candidate consent");
-    require(verifyConsent(employer, employerConsent), "No employer consent");
+    require(candidateConsented[candidate][employer], "No candidate consent");
+    require(employerConsented[employer][candidate], "No employer consent");
     
-    // Decrypt only the suggested midpoint — not the full range
-    euint256 midpoint = FHE.div(
-        FHE.add(candidateSalaryMin[candidate], employerBudget[employer]),
-        FHE.asEuint256(2)
-    );
+    // Publish the decrypted result on-chain using Threshold Network signature
+    // Client calls: client.decryptForTx(ctHash).withoutPermit().execute()
+    // Returns: { decryptedValue, signature } — submitted here
+    FHE.publishDecryptResult(ctHash, decryptedValue, signature);
     
-    // Decrypt and return — only possible after mutual consent
-    return FHE.decrypt(midpoint);
-}`;
+    emit SalaryRevealed(candidate, employer, decryptedValue);
+}
+
+// Client-side (@cofhe/sdk) — decryptForView for UI display only
+// const balance = await client
+//   .decryptForView(ctHash, FheTypes.Uint64)
+//   .execute();
+//
+// Client-side (@cofhe/sdk) — decryptForTx for on-chain publishing
+// const { decryptedValue, signature } = await client
+//   .decryptForTx(ctHash)
+//   .withoutPermit()
+//   .execute();
+// await contract.revealSalary(candidate, employer, ctHash, decryptedValue, signature);`;
 
 export default function WhitepaperPage() {
   const [activeSection, setActiveSection] = useState("abstract");
@@ -164,7 +178,7 @@ export default function WhitepaperPage() {
         <aside className="hidden lg:flex flex-col w-56 shrink-0 border-r border-border bg-card sticky top-0 h-screen overflow-y-auto">
           <div className="px-4 py-5 border-b border-border">
             <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Whitepaper</div>
-            <div className="font-mono-cipher text-xs text-muted-foreground mt-1">v1.0 — Wave 1</div>
+            <div className="font-mono-cipher text-xs text-muted-foreground mt-1">v2.0 — Wave 2</div>
           </div>
           <nav className="py-4 px-2 space-y-0.5">
             {TOC.map((item) => (
@@ -194,7 +208,7 @@ export default function WhitepaperPage() {
           {/* Header */}
           <div className="pb-12 space-y-4">
             <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">
-              Technical Whitepaper — v1.0
+              Technical Whitepaper — v2.1
             </div>
             <h1 className="text-3xl md:text-5xl font-bold text-foreground leading-tight" style={{ fontFamily: "Space Grotesk" }}>
               Cipher CV:<br />
@@ -204,8 +218,8 @@ export default function WhitepaperPage() {
             <div className="font-mono-cipher text-xs text-muted-foreground space-y-1">
               <div>Authors: Cipher CV Core Team</div>
               <div>Date: {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long" })}</div>
-              <div>Network: Fhenix Frontier Testnet (Chain ID: 8008135)</div>
-              <div>Status: Wave 1 — Frontend + Demo Layer Active</div>
+              <div>Network: Ethereum Sepolia Testnet (Chain ID: 11155111)</div>
+              <div>Status: Wave 2 — @cofhe/sdk Migration · decryptForView / decryptForTx</div>
             </div>
             <div className="flex flex-wrap gap-2 pt-2">
               {["FHE", "Privacy", "Labor Markets", "Fhenix", "fhEVM", "Encrypted Matching"].map(tag => (
@@ -300,7 +314,7 @@ export default function WhitepaperPage() {
                 { op: "FHE.gte(a, b)", desc: "Encrypted greater-than-or-equal comparison. Core operator for salary overlap detection." },
                 { op: "FHE.and(a, b)", desc: "Logical AND on encrypted booleans. Combines salary and experience match signals." },
                 { op: "FHE.asEuint256(x)", desc: "Converts an inEuint256 input (submitted by client) to an on-chain encrypted integer." },
-                { op: "FHE.decrypt(x)", desc: "Decrypts an encrypted value. Only callable by authorized parties with proper access control." },
+                { op: "decryptForView / decryptForTx", desc: "FHE.decrypt() deprecated (Apr 2026). Use decryptForView for UI display or decryptForTx to get a Threshold Network signature for FHE.publishDecryptResult() on-chain." },
                 { op: "FHE.div(a, b)", desc: "Homomorphic division. Used to compute the encrypted salary midpoint for mutual reveal." },
               ].map((item, i) => (
                 <div key={item.op} className={`p-4 space-y-2 ${i % 3 !== 2 ? "border-b md:border-b-0 md:border-r border-border" : ""} ${i < 3 ? "border-b border-border" : ""}`}>
@@ -322,7 +336,7 @@ export default function WhitepaperPage() {
                   phase: "01",
                   name: "Profile Encryption",
                   actor: "Candidate / Employer",
-                  desc: "The client-side CoFHE SDK encrypts all sensitive inputs — salary range, experience, skill vectors — before any network transmission. The encrypted values are submitted to the Fhenix smart contract as inEuint256 types.",
+                  desc: "The client-side @cofhe/sdk (successor to cofhejs) encrypts all sensitive inputs — salary range, experience, skill vectors — before any network transmission using encryptInputs([...]).execute(). The encrypted values are submitted to the Fhenix smart contract as inEuint256 types.",
                   guarantee: "No plaintext leaves the browser.",
                 },
                 {
@@ -532,17 +546,17 @@ export default function WhitepaperPage() {
                     "React frontend with Swiss Brutalist Privacy design system",
                     "Simulated FHE matching with visual encrypted computation",
                     "RainbowKit + wagmi wallet integration",
-                    "Fhenix Frontier Testnet connection",
+                    "Ethereum Sepolia Testnet connection",
                     "Candidate and Employer dashboard shells",
                     "Interactive demo with preset match scenarios",
                   ],
                 },
                 {
                   wave: "Wave 2",
-                  status: "Deploying",
+                  status: "Active",
                   title: "Smart Contract Layer",
                   items: [
-                    "CipherCV.sol deployment on Fhenix Frontier Testnet",
+                    "CipherCV.sol deployment on Ethereum Sepolia Testnet",
                     "CoFHE SDK integration for client-side encryption",
                     "On-chain profile submission and storage",
                     "Blind matching computation via FHE operators",
@@ -606,7 +620,7 @@ export default function WhitepaperPage() {
             <div className="border border-border p-6 grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
               {[
                 { label: "Fhenix Documentation", href: "https://docs.fhenix.zone", desc: "fhEVM developer docs and CoFHE SDK" },
-                { label: "Fhenix Testnet", href: "https://fhenix.io", desc: "Frontier Testnet — Chain ID 8008135" },
+                { label: "Sepolia Testnet", href: "https://sepolia.etherscan.io", desc: "Ethereum Sepolia — Chain ID 11155111" },
                 { label: "FHE Research", href: "https://fhenix.io/whitepaper", desc: "Foundational FHE on EVM research" },
               ].map(link => (
                 <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer" className="group space-y-1">
@@ -622,8 +636,8 @@ export default function WhitepaperPage() {
           {/* Footer */}
           <div className="pt-12 pb-6 border-t border-border mt-12">
             <div className="font-mono-cipher text-xs text-muted-foreground space-y-1">
-              <div>Cipher CV Protocol — Technical Whitepaper v1.0</div>
-              <div>Fhenix Privacy-by-Design Buildathon — Wave 1 — {new Date().getFullYear()}</div>
+              <div>Cipher CV Protocol — Technical Whitepaper v2.0</div>
+              <div>Fhenix Privacy-by-Design Buildathon — Wave 2 — {new Date().getFullYear()}</div>
               <div className="text-primary mt-2">All cryptographic guarantees are enforced by the Fhenix fhEVM. Privacy is not a policy — it is a mathematical property.</div>
             </div>
           </div>

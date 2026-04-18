@@ -1,0 +1,890 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\contracts\\CipherBatchMatcher.sol": {
+      "lastModificationDate": 1776280852188,
+      "contentHash": "aa9d392152d3b0c7b4fa246aaba7aa60",
+      "sourceName": "contracts/CipherBatchMatcher.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@fhenixprotocol/cofhe-contracts/FHE.sol",
+        "./CipherCV.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "CipherBatchMatcher"
+      ]
+    },
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\contracts\\CipherCV.sol": {
+      "lastModificationDate": 1776280864914,
+      "contentHash": "d602bc39ab3b80837bf9c3e7ed9a58b3",
+      "sourceName": "contracts/CipherCV.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@fhenixprotocol/cofhe-contracts/FHE.sol",
+        "@fhenixprotocol/contracts/access/Permissioned.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "CipherCV"
+      ]
+    },
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\node_modules\\@fhenixprotocol\\cofhe-contracts\\FHE.sol": {
+      "lastModificationDate": 1776280554053,
+      "contentHash": "9a330513468c64529a387421862c4347",
+      "sourceName": "@fhenixprotocol/cofhe-contracts/FHE.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/utils/Strings.sol",
+        "./ICofhe.sol"
+      ],
+      "versionPragmas": [
+        ">=0.8.19 <0.9.0"
+      ],
+      "artifacts": [
+        "BindingsEaddress",
+        "BindingsEbool",
+        "BindingsEuint128",
+        "BindingsEuint16",
+        "BindingsEuint32",
+        "BindingsEuint64",
+        "BindingsEuint8",
+        "Common",
+        "FHE",
+        "Impl"
+      ]
+    },
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\node_modules\\@fhenixprotocol\\contracts\\access\\Permissioned.sol": {
+      "lastModificationDate": 1776277887421,
+      "contentHash": "2088536ce428463f5c7ea49393606b18",
+      "sourceName": "@fhenixprotocol/contracts/access/Permissioned.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/utils/cryptography/ECDSA.sol",
+        "@openzeppelin/contracts/utils/cryptography/EIP712.sol"
+      ],
+      "versionPragmas": [
+        ">=0.8.19 <0.9.0"
+      ],
+      "artifacts": [
+        "Permissioned"
+      ]
+    },
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\node_modules\\@fhenixprotocol\\cofhe-contracts\\ICofhe.sol": {
+      "lastModificationDate": 1776280554055,
+      "contentHash": "5c677c82df17d56e36a0fcdf0adbb602",
+      "sourceName": "@fhenixprotocol/cofhe-contracts/ICofhe.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.8.25 <0.9.0"
+      ],
+      "artifacts": [
+        "ITaskManager",
+        "Utils"
+      ]
+    },
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\node_modules\\@openzeppelin\\contracts\\utils\\Strings.sol": {
+      "lastModificationDate": 1776277895390,
+      "contentHash": "d2fa243e766a193585b7e9bf36898d80",
+      "sourceName": "@openzeppelin/contracts/utils/Strings.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./math/Math.sol",
+        "./math/SafeCast.sol",
+        "./math/SignedMath.sol",
+        "./Bytes.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "Strings"
+      ]
+    },
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\node_modules\\@openzeppelin\\contracts\\utils\\math\\Math.sol": {
+      "lastModificationDate": 1776277895400,
+      "contentHash": "5b8c6935ac52b7494df19d6feb38f5cc",
+      "sourceName": "@openzeppelin/contracts/utils/math/Math.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../Panic.sol",
+        "./SafeCast.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Math"
+      ]
+    },
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\node_modules\\@openzeppelin\\contracts\\utils\\math\\SignedMath.sol": {
+      "lastModificationDate": 1776277895400,
+      "contentHash": "ae3528afb8bdb0a7dcfba5b115ee8074",
+      "sourceName": "@openzeppelin/contracts/utils/math/SignedMath.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./SafeCast.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "SignedMath"
+      ]
+    },
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\node_modules\\@openzeppelin\\contracts\\utils\\Bytes.sol": {
+      "lastModificationDate": 1776277895364,
+      "contentHash": "3b32ea3a40a2d708f61e7161f081ca93",
+      "sourceName": "@openzeppelin/contracts/utils/Bytes.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./math/Math.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "Bytes"
+      ]
+    },
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\node_modules\\@openzeppelin\\contracts\\utils\\math\\SafeCast.sol": {
+      "lastModificationDate": 1776277895400,
+      "contentHash": "f28a38cd37f4225d0a91fb5405dd850f",
+      "sourceName": "@openzeppelin/contracts/utils/math/SafeCast.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "SafeCast"
+      ]
+    },
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\node_modules\\@openzeppelin\\contracts\\utils\\Panic.sol": {
+      "lastModificationDate": 1776277895395,
+      "contentHash": "2133dc13536b4a6a98131e431fac59e1",
+      "sourceName": "@openzeppelin/contracts/utils/Panic.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Panic"
+      ]
+    },
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\node_modules\\@openzeppelin\\contracts\\utils\\cryptography\\ECDSA.sol": {
+      "lastModificationDate": 1776277895367,
+      "contentHash": "b038f3665d2262af34fe6009e3cd78dd",
+      "sourceName": "@openzeppelin/contracts/utils/cryptography/ECDSA.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "ECDSA"
+      ]
+    },
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\node_modules\\@openzeppelin\\contracts\\utils\\cryptography\\EIP712.sol": {
+      "lastModificationDate": 1776277895364,
+      "contentHash": "1351802e3aa364e90aacf03f65b78176",
+      "sourceName": "@openzeppelin/contracts/utils/cryptography/EIP712.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./MessageHashUtils.sol",
+        "../ShortStrings.sol",
+        "../../interfaces/IERC5267.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "EIP712"
+      ]
+    },
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\node_modules\\@openzeppelin\\contracts\\utils\\ShortStrings.sol": {
+      "lastModificationDate": 1776277895390,
+      "contentHash": "193937821a0ace7308133b4c68f6b9be",
+      "sourceName": "@openzeppelin/contracts/utils/ShortStrings.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./StorageSlot.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "ShortStrings"
+      ]
+    },
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\node_modules\\@openzeppelin\\contracts\\interfaces\\IERC5267.sol": {
+      "lastModificationDate": 1776277895349,
+      "contentHash": "6e00d2fe4bc0d5f1add753824498bb35",
+      "sourceName": "@openzeppelin/contracts/interfaces/IERC5267.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.4.16"
+      ],
+      "artifacts": [
+        "IERC5267"
+      ]
+    },
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\node_modules\\@openzeppelin\\contracts\\utils\\cryptography\\MessageHashUtils.sol": {
+      "lastModificationDate": 1776277895360,
+      "contentHash": "fab97298382d4c32182a66ec35255b71",
+      "sourceName": "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../Strings.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "MessageHashUtils"
+      ]
+    },
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\node_modules\\@openzeppelin\\contracts\\utils\\StorageSlot.sol": {
+      "lastModificationDate": 1776277895390,
+      "contentHash": "e656d64c4ce918f3d13030b91c935134",
+      "sourceName": "@openzeppelin/contracts/utils/StorageSlot.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "StorageSlot"
+      ]
+    },
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\contracts\\CipherVault.sol": {
+      "lastModificationDate": 1776280864938,
+      "contentHash": "c45957235276f5cd76f70e96afff2290",
+      "sourceName": "contracts/CipherVault.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@fhenixprotocol/cofhe-contracts/FHE.sol",
+        "@fhenixprotocol/contracts/access/Permissioned.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "CipherVault"
+      ]
+    },
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\contracts\\CipherStealth.sol": {
+      "lastModificationDate": 1776280852188,
+      "contentHash": "807e00c78e1507047040b681633ce34b",
+      "sourceName": "contracts/CipherStealth.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@fhenixprotocol/cofhe-contracts/FHE.sol",
+        "@fhenixprotocol/contracts/access/Permissioned.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "CipherStealth"
+      ]
+    },
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\contracts\\CipherGovernance.sol": {
+      "lastModificationDate": 1776280887192,
+      "contentHash": "accedd30474a8c1b25928cd44fb5431e",
+      "sourceName": "contracts/CipherGovernance.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@fhenixprotocol/cofhe-contracts/FHE.sol",
+        "@fhenixprotocol/contracts/access/Permissioned.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "CipherGovernance"
+      ]
+    },
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\contracts\\CipherEscrow.sol": {
+      "lastModificationDate": 1776280914072,
+      "contentHash": "1d797cd3d97a3bc3fae28950904f4fe9",
+      "sourceName": "contracts/CipherEscrow.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@fhenixprotocol/cofhe-contracts/FHE.sol",
+        "@fhenixprotocol/contracts/access/Permissioned.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "CipherEscrow"
+      ]
+    },
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\contracts\\CipherCounterOffer.sol": {
+      "lastModificationDate": 1776280914054,
+      "contentHash": "31a0b4c292058f1c554f6fde1c60e872",
+      "sourceName": "contracts/CipherCounterOffer.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@fhenixprotocol/cofhe-contracts/FHE.sol",
+        "@fhenixprotocol/contracts/access/Permissioned.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "CipherCounterOffer"
+      ]
+    },
+    "C:\\Users\\siddh\\Downloads\\cyphercv\\contracts\\CipherRegistry.sol": {
+      "lastModificationDate": 1776279286606,
+      "contentHash": "7aab53aebb4f6786344957600853bed9",
+      "sourceName": "contracts/CipherRegistry.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "CipherRegistry"
+      ]
+    }
+  }
+}
