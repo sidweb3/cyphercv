@@ -1,0 +1,12 @@
+"npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: vite-template@0.0.0
+npm warn Found: hardhat@2.28.6
+npm warn node_modules/hardhat
+npm warn   dev hardhat@"^3.3.0" from the root project
+npm warn   2 more (@cofhe/sdk, @nomicfoundation/hardhat-ethers)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peerOptional hardhat@"^2.0.0" from @cofhe/sdk@0.4.0
+npm warn node_modules/@cofhe/sdk
+npm warn   @cofhe/sdk@"^0.4.0" from the root project
+"

@@ -161,7 +161,7 @@ export default function EmployerPage() {
         {/* Header */}
         <div className="space-y-1">
           <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">
-            Employer Dashboard — Wave 2
+            Employer Dashboard — Wave 3
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground" style={{ fontFamily: "Space Grotesk" }}>
             Encrypted Job Spec

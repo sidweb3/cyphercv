@@ -44,10 +44,13 @@ const ROLES_LIST = ["Software Engineer", "Senior Engineer", "Staff Engineer", "P
 
 // ─── FHE Status Banner ────────────────────────────────────────────────────────
 function FHEStatusBanner({ chainId }: { chainId?: number }) {
-  const isSepolia = chainId === 11155111;
+  // Arbitrum Sepolia = 421614, Ethereum Sepolia = 11155111
+  const isArbSepolia = chainId === 421614;
+  const isEthSepolia = chainId === 11155111;
+  const isTestnet = isArbSepolia || isEthSepolia;
   const deployed = isContractDeployed();
 
-  if (isSepolia && deployed) {
+  if (isArbSepolia && deployed) {
     return (
       <motion.div
         initial={{ opacity: 0, y: -8 }}
@@ -57,11 +60,11 @@ function FHEStatusBanner({ chainId }: { chainId?: number }) {
         <div className="flex items-center gap-3">
           <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
           <span className="font-mono-cipher text-xs text-primary">
-            Contracts Deployed — Ethereum Sepolia Testnet
+            Contracts Deployed — Arbitrum Sepolia (Chain ID: 421614)
           </span>
         </div>
         <a
-          href={getContractExplorerUrl("CipherCV", "eth-sepolia")}
+          href={getContractExplorerUrl("CipherCV", "arb-sepolia")}
           target="_blank"
           rel="noopener noreferrer"
           className="font-mono-cipher text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
@@ -72,12 +75,12 @@ function FHEStatusBanner({ chainId }: { chainId?: number }) {
     );
   }
 
-  if (isSepolia && !deployed) {
+  if (isTestnet && !deployed) {
     return (
       <div className="border border-border bg-card px-4 py-3 flex items-center gap-3">
         <AlertTriangle className="w-3.5 h-3.5 text-muted-foreground" />
         <span className="font-mono-cipher text-xs text-muted-foreground">
-          Connected to Sepolia — deploy contracts to enable on-chain matching
+          Connected to testnet — deploy contracts to enable on-chain matching
         </span>
       </div>
     );
@@ -87,7 +90,7 @@ function FHEStatusBanner({ chainId }: { chainId?: number }) {
     <div className="border border-border bg-card px-4 py-3 flex items-center gap-3">
       <Lock className="w-3.5 h-3.5 text-muted-foreground" />
       <span className="font-mono-cipher text-xs text-muted-foreground">
-        Demo mode — connect to Ethereum Sepolia (Chain ID: 11155111) for on-chain matching
+        Demo mode — connect to Arbitrum Sepolia (Chain ID: 421614) for on-chain matching
       </span>
     </div>
   );

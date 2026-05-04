@@ -16,6 +16,8 @@ import type * as matches from "../matches.js";
 import type * as notifications from "../notifications.js";
 import type * as profiles from "../profiles.js";
 import type * as users from "../users.js";
+import type * as vault from "../vault.js";
+import type * as wave3 from "../wave3.js";
 
 import type {
   ApiFromModules,
@@ -32,6 +34,8 @@ declare const fullApi: ApiFromModules<{
   notifications: typeof notifications;
   profiles: typeof profiles;
   users: typeof users;
+  vault: typeof vault;
+  wave3: typeof wave3;
 }>;
 
 /**

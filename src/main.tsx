@@ -31,6 +31,7 @@ const VaultPage = lazy(() => import("./pages/app/VaultPage.tsx"));
 const GovernancePage = lazy(() => import("./pages/app/GovernancePage.tsx"));
 const DownloadPage = lazy(() => import("./pages/DownloadPage.tsx"));
 const DeploymentGuide = lazy(() => import("./pages/DeploymentGuide.tsx"));
+const SDKPage = lazy(() => import("./pages/app/SDKPage.tsx"));
 
 function RouteLoading() {
   return (
@@ -96,6 +97,7 @@ createRoot(document.getElementById("root")!).render(
                     <Route path="/app/proofs" element={<ProofExplorerPage />} />
                     <Route path="/app/vault" element={<VaultPage />} />
                     <Route path="/app/governance" element={<GovernancePage />} />
+                    <Route path="/app/sdk" element={<SDKPage />} />
                     <Route path="/download" element={<DownloadPage />} />
                     <Route path="/deploy" element={<DeploymentGuide />} />
                     <Route path="*" element={<NotFound />} />

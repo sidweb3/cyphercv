@@ -286,7 +286,7 @@ export default function ProofExplorerPage() {
         {/* Header */}
         <div className="space-y-1">
           <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">
-            FHE Proof Explorer — Wave 2
+            FHE Proof Explorer — Wave 3
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground" style={{ fontFamily: "Space Grotesk" }}>
             Live Proof Verification
@@ -301,16 +301,16 @@ export default function ProofExplorerPage() {
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4 text-primary" />
             <span className="font-mono-cipher text-xs text-primary">
-              Ethereum Sepolia — Chain ID 11155111 — Contract Verification Active
+              Arbitrum Sepolia — Chain ID 421614 — Contract Verification Active
             </span>
           </div>
           <a
-            href="https://sepolia.etherscan.io"
+            href="https://sepolia.arbiscan.io"
             target="_blank"
             rel="noopener noreferrer"
             className="font-mono-cipher text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
           >
-            Sepolia Explorer <ExternalLink className="w-3 h-3" />
+            Arbiscan Explorer <ExternalLink className="w-3 h-3" />
           </a>
         </div>
 

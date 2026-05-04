@@ -326,7 +326,7 @@ export default function GovernancePage() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
-            <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Protocol Governance — Wave 2</div>
+            <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Protocol Governance — Wave 3</div>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground" style={{ fontFamily: "Space Grotesk" }}>
               On-Chain Governance
             </h1>

@@ -178,7 +178,7 @@ export default function WhitepaperPage() {
         <aside className="hidden lg:flex flex-col w-56 shrink-0 border-r border-border bg-card sticky top-0 h-screen overflow-y-auto">
           <div className="px-4 py-5 border-b border-border">
             <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Whitepaper</div>
-            <div className="font-mono-cipher text-xs text-muted-foreground mt-1">v2.0 — Wave 2</div>
+            <div className="font-mono-cipher text-xs text-muted-foreground mt-1">v3.0 — Wave 3</div>
           </div>
           <nav className="py-4 px-2 space-y-0.5">
             {TOC.map((item) => (
@@ -208,7 +208,7 @@ export default function WhitepaperPage() {
           {/* Header */}
           <div className="pb-12 space-y-4">
             <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">
-              Technical Whitepaper — v2.1
+              Technical Whitepaper — v3.0
             </div>
             <h1 className="text-3xl md:text-5xl font-bold text-foreground leading-tight" style={{ fontFamily: "Space Grotesk" }}>
               Cipher CV:<br />
@@ -219,7 +219,7 @@ export default function WhitepaperPage() {
               <div>Authors: Cipher CV Core Team</div>
               <div>Date: {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long" })}</div>
               <div>Network: Ethereum Sepolia Testnet (Chain ID: 11155111)</div>
-              <div>Status: Wave 2 — @cofhe/sdk Migration · decryptForView / decryptForTx</div>
+              <div>Status: Wave 3 — Mainnet Deployment · DAO Governance · Public SDK</div>
             </div>
             <div className="flex flex-wrap gap-2 pt-2">
               {["FHE", "Privacy", "Labor Markets", "Fhenix", "fhEVM", "Encrypted Matching"].map(tag => (
@@ -620,7 +620,7 @@ export default function WhitepaperPage() {
             <div className="border border-border p-6 grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
               {[
                 { label: "Fhenix Documentation", href: "https://docs.fhenix.zone", desc: "fhEVM developer docs and CoFHE SDK" },
-                { label: "Sepolia Testnet", href: "https://sepolia.etherscan.io", desc: "Ethereum Sepolia — Chain ID 11155111" },
+                { label: "Arbitrum Sepolia Explorer", href: "https://sepolia.arbiscan.io", desc: "Arbitrum Sepolia — Chain ID 421614" },
                 { label: "FHE Research", href: "https://fhenix.io/whitepaper", desc: "Foundational FHE on EVM research" },
               ].map(link => (
                 <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer" className="group space-y-1">
@@ -636,8 +636,8 @@ export default function WhitepaperPage() {
           {/* Footer */}
           <div className="pt-12 pb-6 border-t border-border mt-12">
             <div className="font-mono-cipher text-xs text-muted-foreground space-y-1">
-              <div>Cipher CV Protocol — Technical Whitepaper v2.0</div>
-              <div>Fhenix Privacy-by-Design Buildathon — Wave 2 — {new Date().getFullYear()}</div>
+              <div>Cipher CV Protocol — Technical Whitepaper v3.0</div>
+              <div>Fhenix Privacy-by-Design Buildathon — Wave 3 — {new Date().getFullYear()}</div>
               <div className="text-primary mt-2">All cryptographic guarantees are enforced by the Fhenix fhEVM. Privacy is not a policy — it is a mathematical property.</div>
             </div>
           </div>

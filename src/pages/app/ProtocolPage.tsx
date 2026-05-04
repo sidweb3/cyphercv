@@ -64,28 +64,28 @@ const ARCHITECTURE_LAYERS = [
     name: "Protocol Layer",
     tech: "Fhenix fhEVM",
     desc: "Fully Homomorphic Encryption virtual machine. Executes arithmetic and comparison operations on encrypted integers without decryption.",
-    status: "Wave 2 — Deploying",
+    status: "Wave 2 — Live",
   },
   {
     layer: "03",
     name: "Storage Layer",
     tech: "Encrypted State",
     desc: "All on-chain state stored as euint32 types. Salary ranges, experience, and skill vectors are never stored in plaintext.",
-    status: "Wave 2 — Deploying",
+    status: "Wave 2 — Live",
   },
   {
     layer: "04",
     name: "Matching Layer",
     tech: "FHE.gte / FHE.and",
     desc: "Blind comparison operators compute salary overlap and experience matching without revealing either party's constraints.",
-    status: "Wave 2 — Deploying",
+    status: "Wave 2 — Live",
   },
   {
     layer: "05",
     name: "Reveal Layer",
     tech: "Mutual Consent Decrypt",
     desc: "Salary figures are decrypted only upon mutual consent from both parties. Rejection reveals zero information.",
-    status: "Wave 2 — Deploying",
+    status: "Wave 2 — Live",
   },
 ];
 
@@ -208,10 +208,10 @@ export default function ProtocolPage() {
         {/* Status banner */}
         <div className="border border-primary p-4 flex items-center justify-between flex-wrap gap-3">
           <div className="font-mono-cipher text-xs text-primary">
-            ▋ Wave 2 Active — 8-Contract Protocol Suite
+            ▋ Wave 3 Active — 8 Contracts Live on Arbitrum Sepolia
           </div>
           <div className="font-mono-cipher text-xs text-muted-foreground">
-            Convex backend live · Ethereum Sepolia (Chain ID: 11155111) · Deploy: npx hardhat run scripts/deploy.ts --network ethSepolia
+            Convex backend live · Arbitrum Sepolia (Chain ID: 421614) · Mainnet deployment in progress
           </div>
           <a
             href="https://docs.fhenix.zone"
@@ -392,7 +392,7 @@ export default function ProtocolPage() {
               "1. Set DEPLOYER_PRIVATE_KEY in your environment",
               "2. Set SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_KEY",
               "3. Get testnet ETH from https://sepoliafaucet.com or https://faucet.quicknode.com/ethereum/sepolia",
-              "4. Run: npx hardhat run scripts/deploy.ts --network ethSepolia",
+              "4. Run: npx hardhat run scripts/deploy.ts --network arbitrum-sepolia",
               "5. Copy the VITE_* env vars from the output to your .env.local",
               "6. The CipherRegistry contract auto-registers all other contracts",
             ].map((step, i) => (
@@ -413,14 +413,14 @@ export default function ProtocolPage() {
               href: "https://docs.fhenix.zone",
             },
             {
-              label: "Sepolia Faucet",
-              desc: "Get testnet ETH for Ethereum Sepolia — Chain ID 11155111",
-              href: "https://sepoliafaucet.com",
+              label: "Arbitrum Sepolia Faucet",
+              desc: "Get testnet ETH for Arbitrum Sepolia — Chain ID 421614",
+              href: "https://faucet.quicknode.com/arbitrum/sepolia",
             },
             {
-              label: "Sepolia Explorer",
-              desc: "Block explorer for Ethereum Sepolia — verify transactions",
-              href: "https://sepolia.etherscan.io",
+              label: "Arbitrum Sepolia Explorer",
+              desc: "Block explorer for Arbitrum Sepolia — verify transactions",
+              href: "https://sepolia.arbiscan.io",
             },
           ].map(link => (
             <a

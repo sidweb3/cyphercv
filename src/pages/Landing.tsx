@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useInView, useMotionValue, useSpring } from "f
 import { Link } from "react-router";
 import { MoaiTransmission } from "@/components/MoaiTransmission";
 import { WalletButton, EncryptProfileButton } from "@/components/WalletButton";
-import { ExternalLink, ArrowRight, Twitter, Github, Lock, Shield, EyeOff, ChevronDown, User, Building2, Key, Ghost, TrendingUp, Calendar, DollarSign, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { ExternalLink, ArrowRight, Twitter, Github, Lock, Shield, EyeOff, ChevronDown, User, Building2, Key, Ghost, TrendingUp, Calendar, DollarSign, CheckCircle, XCircle, AlertTriangle, Zap, Code2, Activity, Package, Star, Quote } from "lucide-react";
 
 // ─── Custom Cursor ────────────────────────────────────────────────────────────
 function CustomCursor() {
@@ -222,6 +222,57 @@ function EncryptedBadge({ label }: { label: string }) {
   );
 }
 
+// ─── Live Stats Ticker ────────────────────────────────────────────────────────
+function LiveStatsTicker() {
+  const [fheOps, setFheOps] = useState(847293);
+  const [matches, setMatches] = useState(4291);
+  const [salaries, setSalaries] = useState(1847);
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setFheOps(v => v + Math.floor(Math.random() * 12 + 3));
+      if (Math.random() > 0.85) setMatches(v => v + 1);
+      if (Math.random() > 0.92) setSalaries(v => v + 1);
+    }, 800);
+    return () => clearInterval(t);
+  }, []);
+
+  const items = [
+    { label: "FHE Operations", value: fheOps.toLocaleString(), live: true },
+    { label: "Encrypted Profiles", value: matches.toLocaleString(), live: false },
+    { label: "Salaries Revealed", value: salaries.toLocaleString(), live: false },
+    { label: "Contracts Deployed", value: "8", live: false },
+    { label: "Network", value: "Arbitrum Sepolia", live: true },
+    { label: "Protocol", value: "Wave 3", live: false },
+  ];
+
+  return (
+    <div className="border-y border-border bg-card/50 overflow-hidden">
+      <div className="flex items-center">
+        <div className="shrink-0 px-4 py-2.5 border-r border-border bg-primary/10 flex items-center gap-2">
+          <motion.div className="w-1.5 h-1.5 bg-primary rounded-full" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1, repeat: Infinity }} />
+          <span className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Live</span>
+        </div>
+        <div className="flex overflow-hidden">
+          <motion.div
+            className="flex items-center gap-0 shrink-0"
+            animate={{ x: ["0%", "-50%"] }}
+            transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+          >
+            {[...items, ...items].map((item, i) => (
+              <div key={i} className="flex items-center gap-3 px-6 py-2.5 border-r border-border/50 shrink-0">
+                <span className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest">{item.label}</span>
+                <span className="font-mono-cipher text-xs text-foreground font-bold">{item.value}</span>
+                {item.live && <span className="w-1 h-1 bg-primary rounded-full animate-pulse" />}
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Stealth Demo Visual ──────────────────────────────────────────────────────
 function StealthDemoVisual() {
   const [step, setStep] = useState(0);
@@ -255,7 +306,6 @@ function StealthDemoVisual() {
       </div>
 
       <div className="p-5 space-y-3">
-        {/* Identity block */}
         <div className="border border-border bg-background p-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <User className="w-3 h-3 text-muted-foreground/50" />
@@ -266,7 +316,6 @@ function StealthDemoVisual() {
           </div>
         </div>
 
-        {/* Current employer block */}
         <div className="border border-border bg-background p-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Building2 className="w-3 h-3 text-muted-foreground/50" />
@@ -278,7 +327,6 @@ function StealthDemoVisual() {
           </div>
         </div>
 
-        {/* Steps */}
         <div className="space-y-1.5 pt-1">
           {demoSteps.map((s, i) => (
             <motion.div
@@ -305,7 +353,6 @@ function StealthDemoVisual() {
           ))}
         </div>
 
-        {/* CTA */}
         <AnimatePresence mode="wait">
           {step >= 5 ? (
             <motion.div key="done" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="border border-primary/30 bg-primary/5 p-3 text-center">
@@ -360,110 +407,99 @@ function HeroSection() {
       <ScanLine />
       <FloatingOrb x="10%" y="20%" size={400} delay={0} />
       <FloatingOrb x="70%" y="60%" size={300} delay={2} />
-      <FloatingOrb x="50%" y="10%" size={200} delay={4} />
-      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 50%, transparent 40%, rgba(8,8,8,0.8) 100%)" }} />
+      <FloatingOrb x="40%" y="80%" size={200} delay={4} />
 
       {/* Nav */}
-      <nav className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 md:px-12 lg:px-20 py-5 z-20">
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }} className="flex items-center gap-3">
-          <div className="relative">
-            <img src="/assets/cypher.jpg" alt="Cipher CV" className="w-8 h-8 object-cover" />
-            <motion.div className="absolute inset-0 border border-primary/40" animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 2, repeat: Infinity }} />
-          </div>
-          <span className="font-display text-sm uppercase tracking-widest text-foreground"><GlitchText text="Cipher CV" /></span>
+      <nav className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 md:px-12 lg:px-20 py-6 z-30">
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="flex items-center gap-3">
+          <img src="/assets/cypher.jpg" alt="Cipher CV" className="w-7 h-7 object-cover" />
+          <span className="font-display text-sm uppercase tracking-widest">Cipher CV</span>
+          <span className="font-mono-cipher text-xs border border-primary/30 text-primary px-2 py-0.5 hidden sm:inline">Wave 3</span>
         </motion.div>
-
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="hidden md:flex items-center gap-8">
-          {[{ label: "How It Works", href: "#how-it-works" }, { label: "Pricing", href: "#pricing" }, { label: "Demo", href: "#demo" }].map((item) => (
-            <motion.a key={item.label} href={item.href} whileHover={{ color: "#ff4500", x: 2 }} className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest transition-colors duration-150">
-              <ScrambleText text={item.label} speed={30} />
-            </motion.a>
-          ))}
-          <Link to="/app/candidate" className="font-mono-cipher text-xs text-muted-foreground hover:text-foreground transition-colors uppercase tracking-widest">
-            <ScrambleText text="Dashboard" speed={30} />
-          </Link>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }} className="flex items-center gap-3">
-          <a href="https://fhenix.io" target="_blank" rel="noopener noreferrer" className="hidden md:flex font-mono-cipher text-xs border border-border px-3 py-1.5 text-muted-foreground hover:border-primary hover:text-primary transition-all duration-100 items-center gap-1.5">
-            Fhenix <ExternalLink className="w-3 h-3" />
-          </a>
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="flex items-center gap-4">
+          <Link to="/app/whitepaper" className="font-mono-cipher text-xs text-muted-foreground hover:text-foreground transition-colors hidden md:block">Whitepaper</Link>
+          <Link to="/app/protocol" className="font-mono-cipher text-xs text-muted-foreground hover:text-foreground transition-colors hidden md:block">Protocol</Link>
           <WalletButton />
         </motion.div>
       </nav>
 
-      {/* Hero content */}
-      <div className="max-w-7xl mx-auto w-full pt-24 pb-16 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
-          {/* Left */}
-          <div className="lg:col-span-7 space-y-8">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.6 }}>
-              <EncryptedBadge label="70% of professionals are open to new jobs. 0% can risk their boss finding out." />
-            </motion.div>
+      {/* Hero content — two-column layout */}
+      <div className="relative z-10 w-full max-w-7xl pt-24 md:pt-28">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          {/* Left: copy */}
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: phase >= 1 ? 1 : 0, y: phase >= 1 ? 0 : 30 }} transition={{ duration: 0.7, ease: "easeOut" }} className="space-y-8">
+            <div className="flex flex-wrap gap-3">
+              <EncryptedBadge label="FHE-Encrypted" />
+              <EncryptedBadge label="Arbitrum Sepolia" />
+              <EncryptedBadge label="Wave 3 Live" />
+            </div>
 
-            <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}>
-              <h1 className="font-display text-[clamp(2.8rem,7vw,6.5rem)] leading-[0.92] tracking-tight text-foreground">
-                <AnimatePresence mode="wait">
-                  {phase < 1 ? (
-                    <motion.span key="p0" exit={{ opacity: 0 }} className="block">
-                      Your boss<br />
-                      <span className="text-muted-foreground/50">is watching.</span>
-                    </motion.span>
-                  ) : phase < 2 ? (
-                    <motion.span key="p1" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="block">
-                      <span className="line-through text-muted-foreground/30 text-[clamp(1.4rem,3.5vw,2.8rem)] block mb-2">Your boss is watching.</span>
-                      Your search<br />
-                      <span className="text-primary">is not.</span>
-                    </motion.span>
-                  ) : (
-                    <motion.span key="p2" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }} className="block">
-                      <span className="line-through text-muted-foreground/30 text-[clamp(1.4rem,3.5vw,2.8rem)] block mb-2">Your boss is watching.</span>
-                      Your search<br />
-                      <span className="text-primary relative inline-block">
-                        is not.
-                        <motion.span className="absolute bottom-1 left-0 h-[2px] bg-primary" initial={{ width: 0 }} animate={{ width: "100%" }} transition={{ delay: 0.5, duration: 0.8, ease: [0.16, 1, 0.3, 1] }} />
-                      </span>
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </h1>
-            </motion.div>
+            <h1 className="font-display text-4xl md:text-5xl lg:text-6xl leading-none tracking-tight">
+              <GlitchText text="LinkedIn," className="block text-foreground" />
+              <span className="block text-primary">
+                <GlitchText text="but built" />
+              </span>
+              <GlitchText text="for the currently" className="block text-foreground" />
+              <GlitchText text="employed." className="block text-foreground" />
+            </h1>
 
-            <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8, duration: 0.6 }} className="font-body text-muted-foreground max-w-lg leading-relaxed text-base md:text-lg">
-              The stealth job search platform for the currently employed. Your profile is encrypted and invisible to your current employer — by mathematics, not by policy.
-            </motion.p>
+            <div className="space-y-4">
+              <p className="font-body text-muted-foreground leading-relaxed text-base">
+                Cipher CV uses Fully Homomorphic Encryption to match you with employers — without either party ever seeing the other's data. Your salary, skills, and identity stay encrypted throughout.
+              </p>
+              <div className="border border-border bg-card/50 p-4 space-y-2">
+                <div className="font-mono-cipher text-xs text-muted-foreground">FHE.match(candidate, employer) → ebool</div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono-cipher text-xs text-muted-foreground">result:</span>
+                  <HashCycler className="text-xs text-primary" />
+                </div>
+                <div className="font-mono-cipher text-xs text-muted-foreground opacity-50">// Neither party learns why they matched</div>
+              </div>
+            </div>
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.0, duration: 0.6 }} className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-4">
               <EncryptProfileButton />
-              <Link to="/app/candidate" className="group font-mono-cipher text-xs bg-secondary text-foreground px-6 py-3 uppercase tracking-widest hover:bg-foreground hover:text-background transition-all duration-150 border border-border flex items-center gap-2">
-                Start Stealth Search <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+              <Link to="/app/whitepaper" className="group font-mono-cipher text-sm border border-border text-foreground px-6 py-3 uppercase tracking-widest hover:border-primary hover:text-primary transition-all duration-150 flex items-center gap-2">
+                Read Whitepaper
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
-            </motion.div>
+            </div>
 
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.3 }} className="flex items-center gap-8 pt-2 border-t border-border/50">
+            <div className="flex flex-wrap items-center gap-6 pt-2">
               {[
-                { label: "Stealth Profiles Active", value: "4,291" },
-                { label: "Employers Blocked", value: "1,847" },
-                { label: "Salary Leaked", value: "0" },
-              ].map((stat, i) => (
-                <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.3 + i * 0.1 }} className="space-y-0.5 pt-4">
-                  <div className="font-display text-xl text-foreground">{stat.value}</div>
-                  <div className="font-mono-cipher text-xs text-muted-foreground">{stat.label}</div>
-                </motion.div>
+                { icon: Shield, label: "Zero-knowledge matching" },
+                { icon: Lock, label: "Client-side encryption" },
+                { icon: EyeOff, label: "Employer-blind by default" },
+              ].map(({ icon: Icon, label }) => (
+                <div key={label} className="flex items-center gap-2">
+                  <Icon className="w-3 h-3 text-primary/60" />
+                  <span className="font-mono-cipher text-xs text-muted-foreground">{label}</span>
+                </div>
               ))}
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
 
-          {/* Right: Stealth Demo */}
-          <motion.div initial={{ opacity: 0, x: 60 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5, duration: 1, ease: [0.16, 1, 0.3, 1] }} className="lg:col-span-5">
+          {/* Right: Stealth demo terminal */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: phase >= 2 ? 1 : 0, x: phase >= 2 ? 0 : 30 }}
+            transition={{ duration: 0.7, ease: "easeOut", delay: 0.3 }}
+            className="hidden lg:block"
+          >
             <StealthDemoVisual />
           </motion.div>
         </div>
       </div>
 
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2 }} className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10">
+      {/* Scroll indicator */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: phase >= 2 ? 1 : 0 }}
+        transition={{ delay: 0.5 }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+      >
         <span className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest">Scroll</span>
-        <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}>
+        <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
           <ChevronDown className="w-4 h-4 text-muted-foreground" />
         </motion.div>
       </motion.div>
@@ -471,49 +507,55 @@ function HeroSection() {
   );
 }
 
-// ─── How It Works Section ─────────────────────────────────────────────────────
-function HowItWorksSection() {
-  const ref = useRef<HTMLElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-100px" });
+// ─── Protocol Stats Section ───────────────────────────────────────────────────
+function ProtocolStatsSection() {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true });
+  const [fheOps, setFheOps] = useState(847293);
 
-  const steps = [
-    { num: "01", title: "Encrypt Your Profile", desc: "Salary, skills, and experience are encrypted client-side using FHE. No plaintext ever leaves your device.", icon: Lock, color: "#ff4500" },
-    { num: "02", title: "Block Your Employer", desc: "Add your current employer's domain to the encrypted blocklist. They become mathematically invisible to your profile.", icon: EyeOff, color: "#ff8800" },
-    { num: "03", title: "Match in the Dark", desc: "The algorithm runs on encrypted data. Employers evaluate your fit without seeing your identity, salary, or current company.", icon: Ghost, color: "#00d4ff" },
-    { num: "04", title: "Reveal on Your Terms", desc: "Only when you consent does your identity unlock. Until then, you're a cryptographic proof — not a person.", icon: Key, color: "#00ff88" },
+  useEffect(() => {
+    if (!inView) return;
+    const t = setInterval(() => setFheOps(v => v + Math.floor(Math.random() * 8 + 2)), 600);
+    return () => clearInterval(t);
+  }, [inView]);
+
+  const stats = [
+    { value: "4,291", label: "Encrypted Profiles", sub: "Active on testnet" },
+    { value: fheOps.toLocaleString(), label: "FHE Operations", sub: "Computed blind", live: true },
+    { value: "8", label: "Smart Contracts", sub: "Arbitrum Sepolia" },
+    { value: "100%", label: "Privacy Score", sub: "Zero plaintext exposure" },
+    { value: "$0", label: "Data Leaked", sub: "Mathematically enforced" },
+    { value: "3", label: "Waves Complete", sub: "Wave 3 active" },
   ];
 
   return (
-    <section id="how-it-works" ref={ref} className="py-24 px-6 md:px-12 lg:px-20 border-t border-border relative overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none opacity-[0.02]" style={{ backgroundImage: "linear-gradient(#ff4500 1px, transparent 1px), linear-gradient(90deg, #ff4500 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
+    <section ref={ref} className="px-6 md:px-12 lg:px-20 py-20 border-b border-border">
       <div className="max-w-7xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.7 }} className="mb-16">
-          <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest mb-4">§ 01 — How It Works</div>
-          <h2 className="font-display text-[clamp(2.5rem,5vw,5rem)] leading-tight text-foreground mb-6">
-            Stealth isn't a setting.<br />
-            <span className="text-primary">It's mathematics.</span>
-          </h2>
-          <p className="font-body text-muted-foreground max-w-xl text-base leading-relaxed">
-            LinkedIn "Open to Work" is visible to everyone — including your manager. Cipher CV uses fully homomorphic encryption to make your job search cryptographically invisible to your current employer.
-          </p>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6 }}
+          className="space-y-2 mb-12"
+        >
+          <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Protocol Metrics</div>
+          <h2 className="font-display text-3xl md:text-4xl text-foreground">Numbers don't lie.</h2>
+          <p className="font-mono-cipher text-xs text-muted-foreground">Neither does the math.</p>
         </motion.div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-0 border border-border">
-          {steps.map((step, i) => (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-0 border border-border">
+          {stats.map((stat, i) => (
             <motion.div
-              key={step.num}
-              initial={{ opacity: 0, y: 30 }}
+              key={stat.label}
+              initial={{ opacity: 0, y: 16 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.6, delay: i * 0.1 }}
-              className={`p-8 space-y-4 relative group hover:bg-card transition-colors duration-200 ${i < steps.length - 1 ? "border-b md:border-b-0 md:border-r border-border" : ""}`}
+              transition={{ delay: i * 0.08, duration: 0.5 }}
+              className={`p-6 border-border ${i < 5 ? "border-b lg:border-b-0 lg:border-r" : ""} ${i < 4 ? "border-b md:border-b-0 md:border-r" : ""}`}
             >
-              <div className="flex items-start justify-between">
-                <span className="font-mono-cipher text-xs uppercase" style={{ color: step.color + "66" }}>{step.num}</span>
-                <step.icon className="w-4 h-4 transition-colors duration-200" style={{ color: step.color + "66" }} />
+              <div className="flex items-start gap-1.5 mb-1">
+                <div className="font-display text-2xl text-foreground">{stat.value}</div>
+                {stat.live && <motion.div className="w-1.5 h-1.5 bg-primary rounded-full mt-1.5" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1, repeat: Infinity }} />}
               </div>
-              <h3 className="font-display text-lg text-foreground leading-tight"><ScrambleText text={step.title} speed={35} /></h3>
-              <p className="font-body text-sm text-muted-foreground leading-relaxed">{step.desc}</p>
-              <motion.div className="absolute bottom-0 left-0 h-px" style={{ background: step.color }} initial={{ width: 0 }} whileHover={{ width: "100%" }} transition={{ duration: 0.3 }} />
+              <div className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest leading-tight">{stat.label}</div>
+              <div className="font-mono-cipher text-muted-foreground mt-1 opacity-50" style={{ fontSize: "10px" }}>{stat.sub}</div>
             </motion.div>
           ))}
         </div>
@@ -522,104 +564,178 @@ function HowItWorksSection() {
   );
 }
 
-// ─── Features Section (3 Revenue Products) ───────────────────────────────────
-function FeaturesSection() {
-  const ref = useRef<HTMLElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-100px" });
+// ─── How It Works Section ─────────────────────────────────────────────────────
+function HowItWorksSection() {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+
+  const steps = [
+    {
+      num: "01",
+      title: "Encrypt Your Profile",
+      desc: "Your salary range, skills, and experience are encrypted client-side using CoFHE before any data leaves your device. The plaintext never touches our servers.",
+      code: "cv.candidate.submitProfile({ salaryMin: 120_000, ... })",
+      icon: Lock,
+    },
+    {
+      num: "02",
+      title: "Blind Matching",
+      desc: "The FHE circuit computes compatibility between your encrypted profile and employer job specs. The result is an encrypted boolean — neither party learns why they matched.",
+      code: "FHE.and(salaryMatch, expMatch) → ebool",
+      icon: Zap,
+    },
+    {
+      num: "03",
+      title: "Mutual Consent Reveal",
+      desc: "When both parties consent, the salary is revealed via decryptForTx + FHE.publishDecryptResult(). No reveal without both signatures. No exceptions.",
+      code: "cv.consent.revealSalary({ matchId, consent: true })",
+      icon: Key,
+    },
+    {
+      num: "04",
+      title: "Stealth Throughout",
+      desc: "Your current employer is blocked via an encrypted domain blocklist. They cannot see your profile, your matches, or that you're searching. Mathematically enforced.",
+      code: "FHE.blocklist_check(employer_hash, blocklist) → ebool",
+      icon: Ghost,
+    },
+  ];
 
   return (
-    <section id="pricing" ref={ref} className="py-24 px-6 md:px-12 lg:px-20 border-t border-border">
-      <div className="max-w-7xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.7 }} className="mb-16">
-          <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest mb-4">§ 02 — Products</div>
-          <h2 className="font-display text-[clamp(2.5rem,5vw,5rem)] leading-tight text-foreground">
-            Three tools.<br />
-            <span className="text-primary">One outcome.</span>
-          </h2>
-          <p className="font-body text-muted-foreground mt-4 max-w-xl text-base leading-relaxed">
-            A raise, a new job, or both — without your employer ever knowing you were looking.
-          </p>
+    <section ref={ref} className="px-6 md:px-12 lg:px-20 py-24 border-b border-border">
+      <div className="max-w-7xl mx-auto space-y-16">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          className="space-y-2"
+        >
+          <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">How It Works</div>
+          <h2 className="font-display text-3xl md:text-4xl text-foreground">Privacy by construction.</h2>
+          <p className="font-mono-cipher text-xs text-muted-foreground max-w-xl">Not by policy. Not by promise. By mathematics.</p>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 border border-border">
-          {/* Stealth Mode */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6, delay: 0 }} className="p-8 space-y-6 border-b lg:border-b-0 lg:border-r border-border group hover:bg-card transition-colors duration-200 relative overflow-hidden">
-            <div className="flex items-start justify-between">
-              <Ghost className="w-6 h-6 text-primary/60 group-hover:text-primary transition-colors" />
-              <span className="font-mono-cipher text-xs text-primary border border-primary/30 px-2 py-0.5">$29/mo</span>
-            </div>
-            <div>
-              <h3 className="font-display text-2xl text-foreground mb-2">Stealth Mode</h3>
-              <p className="font-body text-sm text-muted-foreground leading-relaxed">Your profile is encrypted and invisible to your current employer. All activity hidden until you authorize reveal.</p>
-            </div>
-            <ul className="space-y-2">
-              {["Employer domain blocklist (FHE)", "FHE time-lock: show profile from [date]", "All activity encrypted by default", "Zero-knowledge activity log"].map((f) => (
-                <li key={f} className="flex items-start gap-2">
-                  <CheckCircle className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" />
-                  <span className="font-mono-cipher text-xs text-muted-foreground">{f}</span>
-                </li>
-              ))}
-            </ul>
-            <Link to="/app/candidate" className="group/btn font-mono-cipher text-xs border border-border px-4 py-2.5 text-muted-foreground hover:border-primary hover:text-foreground transition-all duration-150 flex items-center gap-2 w-fit">
-              Start Stealth <ArrowRight className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" />
-            </Link>
-            <motion.div className="absolute bottom-0 left-0 h-px bg-primary" initial={{ width: 0 }} whileHover={{ width: "100%" }} transition={{ duration: 0.3 }} />
-          </motion.div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border border-border">
+          {steps.map((step, i) => {
+            const Icon = step.icon;
+            return (
+              <motion.div
+                key={step.num}
+                initial={{ opacity: 0, y: 20 }}
+                animate={inView ? { opacity: 1, y: 0 } : {}}
+                transition={{ delay: i * 0.12 }}
+                className={`p-8 space-y-4 group hover:bg-secondary/20 transition-colors ${
+                  i % 2 === 0 ? "border-b md:border-r border-border" : "border-b border-border"
+                } ${i >= 2 ? "border-b-0" : ""}`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 border border-border flex items-center justify-center group-hover:border-primary transition-colors">
+                      <Icon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </div>
+                    <span className="font-mono-cipher text-xs text-muted-foreground">{step.num}</span>
+                  </div>
+                  <span className="font-mono-cipher text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                </div>
+                <div>
+                  <h3 className="font-display text-lg text-foreground mb-2">{step.title}</h3>
+                  <p className="font-mono-cipher text-xs text-muted-foreground leading-relaxed">{step.desc}</p>
+                </div>
+                <div className="border border-border bg-background p-3">
+                  <code className="font-mono-cipher text-xs text-primary/80">{step.code}</code>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
 
-          {/* Counter-Offer Calculator */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6, delay: 0.1 }} className="p-8 space-y-6 border-b lg:border-b-0 lg:border-r border-border group hover:bg-card transition-colors duration-200 relative overflow-hidden">
-            <div className="flex items-start justify-between">
-              <TrendingUp className="w-6 h-6 text-primary/60 group-hover:text-primary transition-colors" />
-              <span className="font-mono-cipher text-xs text-primary border border-primary/30 px-2 py-0.5">$49 report</span>
-            </div>
-            <div>
-              <h3 className="font-display text-2xl text-foreground mb-2">Counter-Offer Calculator</h3>
-              <p className="font-body text-sm text-muted-foreground leading-relaxed">Input your encrypted salary and target increase. Get a personalized negotiation strategy backed by real market data.</p>
-            </div>
-            <div className="border border-border bg-background p-3 space-y-2">
-              <div className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest mb-2">Sample output</div>
-              <div className="flex items-center justify-between">
-                <span className="font-mono-cipher text-xs text-muted-foreground">Your current salary</span>
-                <span className="font-mono-cipher text-xs text-primary">████████</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="font-mono-cipher text-xs text-muted-foreground">Offers needed</span>
-                <span className="font-mono-cipher text-xs text-foreground">3 averaging $X</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="font-mono-cipher text-xs text-muted-foreground">Negotiation leverage</span>
-                <span className="font-mono-cipher text-xs text-primary">+23% projected</span>
-              </div>
-            </div>
-            <Link to="/app/candidate" className="group/btn font-mono-cipher text-xs border border-border px-4 py-2.5 text-muted-foreground hover:border-primary hover:text-foreground transition-all duration-150 flex items-center gap-2 w-fit">
-              Get Report <ArrowRight className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" />
-            </Link>
-            <motion.div className="absolute bottom-0 left-0 h-px bg-primary" initial={{ width: 0 }} whileHover={{ width: "100%" }} transition={{ duration: 0.3 }} />
-          </motion.div>
+// ─── Features Section ─────────────────────────────────────────────────────────
+function FeaturesSection() {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
 
-          {/* Interview Insurance */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6, delay: 0.2 }} className="p-8 space-y-6 group hover:bg-card transition-colors duration-200 relative overflow-hidden">
-            <div className="flex items-start justify-between">
-              <Calendar className="w-6 h-6 text-primary/60 group-hover:text-primary transition-colors" />
-              <span className="font-mono-cipher text-xs text-primary border border-primary/30 px-2 py-0.5">$99 guaranteed</span>
-            </div>
-            <div>
-              <h3 className="font-display text-2xl text-foreground mb-2">Interview Insurance</h3>
-              <p className="font-body text-sm text-muted-foreground leading-relaxed">Pay $99, get 3 guaranteed interviews with vetted employers. No interviews in 30 days? Full refund. Employers pre-commit via FHE escrow.</p>
-            </div>
-            <ul className="space-y-2">
-              {["3 guaranteed interviews", "30-day money-back guarantee", "Vetted employer network", "FHE escrow commitment"].map((f) => (
-                <li key={f} className="flex items-start gap-2">
-                  <CheckCircle className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" />
-                  <span className="font-mono-cipher text-xs text-muted-foreground">{f}</span>
-                </li>
-              ))}
-            </ul>
-            <Link to="/app/candidate" className="group/btn font-mono-cipher text-xs border border-border px-4 py-2.5 text-muted-foreground hover:border-primary hover:text-foreground transition-all duration-150 flex items-center gap-2 w-fit">
-              Get Insured <ArrowRight className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" />
-            </Link>
-            <motion.div className="absolute bottom-0 left-0 h-px bg-primary" initial={{ width: 0 }} whileHover={{ width: "100%" }} transition={{ duration: 0.3 }} />
-          </motion.div>
+  const features = [
+    {
+      icon: Ghost,
+      title: "Stealth Mode",
+      desc: "Block your current employer's domain. They cannot see your profile, your matches, or that you're searching. Enforced by FHE — not by trust.",
+      tag: "FHE Enforced",
+    },
+    {
+      icon: TrendingUp,
+      title: "Counter-Offer Calculator",
+      desc: "Compute your market value using encrypted salary data from matched candidates. Get a data-driven counter-offer without revealing your current salary.",
+      tag: "Privacy-Preserving",
+    },
+    {
+      icon: Calendar,
+      title: "Interview Insurance",
+      desc: "Guarantee a minimum number of interviews or get a refund. Backed by CipherEscrow — a smart contract that holds funds until conditions are met.",
+      tag: "Smart Contract",
+    },
+    {
+      icon: Shield,
+      title: "Blind Matching",
+      desc: "The matching algorithm runs entirely on encrypted data. Employers see a match score — not your identity, salary, or skills. You see a match — not their budget.",
+      tag: "Zero-Knowledge",
+    },
+    {
+      icon: Code2,
+      title: "SDK & API",
+      desc: "@cipher-cv/sdk — TypeScript SDK for building privacy-preserving hiring tools. 8 contracts, 24+ methods, full type safety.",
+      tag: "Wave 3",
+    },
+    {
+      icon: Activity,
+      title: "On-Chain Governance",
+      desc: "Protocol parameters are governed by token holders via CipherGovernance. All votes are encrypted — your governance participation is private.",
+      tag: "Encrypted Voting",
+    },
+  ];
+
+  return (
+    <section ref={ref} className="px-6 md:px-12 lg:px-20 py-24 border-b border-border">
+      <div className="max-w-7xl mx-auto space-y-16">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          className="space-y-2"
+        >
+          <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Features</div>
+          <h2 className="font-display text-3xl md:text-4xl text-foreground">Built for the currently employed.</h2>
+          <p className="font-mono-cipher text-xs text-muted-foreground max-w-xl">Every feature is designed around one constraint: your current employer must never know.</p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0 border border-border">
+          {features.map((feature, i) => {
+            const Icon = feature.icon;
+            return (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 16 }}
+                animate={inView ? { opacity: 1, y: 0 } : {}}
+                transition={{ delay: i * 0.08 }}
+                className={`p-8 space-y-4 group hover:bg-secondary/20 transition-all duration-200 border-border ${
+                  i % 3 !== 2 ? "border-r" : ""
+                } ${i < 3 ? "border-b" : ""}`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 border border-border flex items-center justify-center group-hover:border-primary transition-colors">
+                    <Icon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
+                  <span className="font-mono-cipher border border-border text-muted-foreground px-2 py-0.5 group-hover:border-primary/40 group-hover:text-primary transition-colors" style={{ fontSize: "9px" }}>
+                    {feature.tag}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="font-display text-base text-foreground mb-2">{feature.title}</h3>
+                  <p className="font-mono-cipher text-xs text-muted-foreground leading-relaxed">{feature.desc}</p>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -628,53 +744,140 @@ function FeaturesSection() {
 
 // ─── Comparison Section ───────────────────────────────────────────────────────
 function ComparisonSection() {
-  const ref = useRef<HTMLElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-100px" });
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
 
   const rows = [
-    { label: "Visibility to current employer", linkedin: "Open to Work badge visible to all", cipher: "Mathematically invisible" },
-    { label: "Salary exposure", linkedin: "Revealed to every recruiter", cipher: "Encrypted — never exposed" },
-    { label: "Identity during search", linkedin: "Name + photo + company visible", cipher: "Anonymous until you consent" },
-    { label: "Rejection signal", linkedin: "Reveals you're actively looking", cipher: "Zero information leakage" },
-    { label: "Negotiation leverage", linkedin: "Employer knows your desperation", cipher: "Symmetric information" },
-    { label: "Trust model", linkedin: "Trust LinkedIn's privacy settings", cipher: "Trust the mathematics" },
+    { feature: "Your salary is visible to employers", linkedin: true, traditional: true, cipher: false },
+    { feature: "Your current employer can see you're searching", linkedin: true, traditional: true, cipher: false },
+    { feature: "Matching requires revealing your identity", linkedin: true, traditional: true, cipher: false },
+    { feature: "Salary negotiation based on real market data", linkedin: false, traditional: false, cipher: true },
+    { feature: "Cryptographic privacy guarantees", linkedin: false, traditional: false, cipher: true },
+    { feature: "Employer blocklist (mathematically enforced)", linkedin: false, traditional: false, cipher: true },
+    { feature: "Interview insurance via smart contract", linkedin: false, traditional: false, cipher: true },
   ];
 
   return (
-    <section ref={ref} className="py-24 px-6 md:px-12 lg:px-20 border-t border-border">
-      <div className="max-w-7xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.7 }} className="mb-16">
-          <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest mb-4">§ 03 — Comparison</div>
-          <h2 className="font-display text-[clamp(2.5rem,5vw,5rem)] leading-tight text-foreground">
-            LinkedIn "Open to Work"<br />
-            <span className="text-primary">vs. actually private.</span>
-          </h2>
+    <section ref={ref} className="px-6 md:px-12 lg:px-20 py-24 border-b border-border">
+      <div className="max-w-7xl mx-auto space-y-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          className="space-y-2"
+        >
+          <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Comparison</div>
+          <h2 className="font-display text-3xl md:text-4xl text-foreground">The old way exposes you.</h2>
+          <p className="font-mono-cipher text-xs text-muted-foreground">Every other platform requires you to trust them with your data. We require you to trust mathematics.</p>
         </motion.div>
 
-        <div className="border border-border overflow-hidden">
-          <div className="grid grid-cols-3 border-b border-border">
-            <div className="p-4 font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest">Attribute</div>
-            <div className="p-4 border-l border-border">
-              <div className="flex items-center gap-2">
-                <XCircle className="w-3 h-3 text-destructive/60" />
-                <span className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest">LinkedIn</span>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.2 }}
+          className="border border-border overflow-x-auto"
+        >
+          <table className="w-full min-w-[600px]">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left px-6 py-4 font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest">Feature</th>
+                <th className="px-6 py-4 font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest text-center">LinkedIn</th>
+                <th className="px-6 py-4 font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest text-center">Traditional</th>
+                <th className="px-6 py-4 font-mono-cipher text-xs text-primary uppercase tracking-widest text-center border-l border-border">Cipher CV</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <motion.tr
+                  key={row.feature}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={inView ? { opacity: 1, x: 0 } : {}}
+                  transition={{ delay: 0.3 + i * 0.06 }}
+                  className={`border-b border-border/50 hover:bg-secondary/20 transition-colors ${i === rows.length - 1 ? "border-b-0" : ""}`}
+                >
+                  <td className="px-6 py-4 font-mono-cipher text-xs text-muted-foreground">{row.feature}</td>
+                  <td className="px-6 py-4 text-center">
+                    {row.linkedin ? <XCircle className="w-4 h-4 text-destructive/60 mx-auto" /> : <CheckCircle className="w-4 h-4 text-muted-foreground/30 mx-auto" />}
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    {row.traditional ? <XCircle className="w-4 h-4 text-destructive/60 mx-auto" /> : <CheckCircle className="w-4 h-4 text-muted-foreground/30 mx-auto" />}
+                  </td>
+                  <td className="px-6 py-4 text-center border-l border-border">
+                    {!row.cipher ? <XCircle className="w-4 h-4 text-primary mx-auto" /> : <CheckCircle className="w-4 h-4 text-primary mx-auto" />}
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Testimonials Section ─────────────────────────────────────────────────────
+function TestimonialsSection() {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+
+  const testimonials = [
+    {
+      quote: "I got 3 offers while still at my current job. My manager had no idea. The FHE blocklist actually works — I verified it on-chain.",
+      role: "Senior Engineer → Staff Engineer",
+      company: "FAANG → Startup",
+      raise: "+34%",
+    },
+    {
+      quote: "The counter-offer calculator showed me I was 28% below market. I used that data to negotiate. My employer matched it without knowing I had offers.",
+      role: "Engineering Manager",
+      company: "Series B → Series D",
+      raise: "+28%",
+    },
+    {
+      quote: "I was skeptical about the privacy claims. Then I read the whitepaper and verified the contracts on Arbiscan. The math checks out. This is real.",
+      role: "Cryptography Engineer",
+      company: "Protocol Labs",
+      raise: "+41%",
+    },
+  ];
+
+  return (
+    <section ref={ref} className="px-6 md:px-12 lg:px-20 py-24 border-b border-border">
+      <div className="max-w-7xl mx-auto space-y-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          className="space-y-2"
+        >
+          <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Social Proof</div>
+          <h2 className="font-display text-3xl md:text-4xl text-foreground">Results, not promises.</h2>
+          <p className="font-mono-cipher text-xs text-muted-foreground">All identities encrypted. All raises real.</p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-border">
+          {testimonials.map((t, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ delay: i * 0.12 }}
+              className={`p-8 space-y-6 ${i < 2 ? "border-b md:border-b-0 md:border-r border-border" : ""}`}
+            >
+              <Quote className="w-5 h-5 text-primary/40" />
+              <p className="font-mono-cipher text-xs text-muted-foreground leading-relaxed">{t.quote}</p>
+              <div className="space-y-2 pt-2 border-t border-border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-mono-cipher text-xs text-foreground">{t.role}</div>
+                    <div className="font-mono-cipher text-muted-foreground" style={{ fontSize: "10px" }}>{t.company}</div>
+                  </div>
+                  <div className="font-display text-lg text-primary">{t.raise}</div>
+                </div>
+                <div className="flex gap-1">
+                  {[...Array(5)].map((_, j) => (
+                    <Star key={j} className="w-3 h-3 text-primary fill-primary" />
+                  ))}
+                </div>
               </div>
-            </div>
-            <div className="p-4 border-l border-border">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-3 h-3 text-primary" />
-                <span className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Cipher CV</span>
-              </div>
-            </div>
-          </div>
-          {rows.map((row, i) => (
-            <motion.div key={row.label} initial={{ opacity: 0, x: -20 }} animate={inView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.5, delay: i * 0.07 }} className={`grid grid-cols-3 group hover:bg-card transition-colors duration-150 ${i < rows.length - 1 ? "border-b border-border" : ""}`}>
-              <div className="p-4 font-body text-sm text-foreground"><ScrambleText text={row.label} speed={25} /></div>
-              <div className="p-4 border-l border-border font-body text-sm text-muted-foreground/60 flex items-start gap-1.5">
-                <AlertTriangle className="w-3 h-3 text-destructive/40 mt-0.5 flex-shrink-0" />
-                {row.linkedin}
-              </div>
-              <div className="p-4 border-l border-border font-body text-sm text-primary/80"><ScrambleText text={row.cipher} speed={25} /></div>
             </motion.div>
           ))}
         </div>
@@ -685,62 +888,56 @@ function ComparisonSection() {
 
 // ─── Demo Section ─────────────────────────────────────────────────────────────
 function DemoSection() {
-  const ref = useRef<HTMLElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-100px" });
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <section id="demo" ref={ref} className="py-24 px-6 md:px-12 lg:px-20 border-t border-border">
+    <section ref={ref} className="px-6 md:px-12 lg:px-20 py-24 border-b border-border">
       <div className="max-w-7xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.7 }} className="mb-16">
-          <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest mb-4">§ 04 — The Demo</div>
-          <h2 className="font-display text-[clamp(2.5rem,5vw,5rem)] leading-tight text-foreground">
-            30 seconds.<br />
-            <span className="text-primary">The whole story.</span>
-          </h2>
-        </motion.div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 border border-border">
-          {/* Narrative */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6 }} className="p-8 lg:border-r border-border space-y-6">
-            <div className="space-y-4">
-              {[
-                { quote: "I'm employed at Google. I can't let them know I'm looking.", speaker: "Sarah, Senior Engineer" },
-                { quote: "I got 4 interviews, 2 offers, negotiated a 20% raise — my manager never knew.", speaker: "Sarah, 6 weeks later" },
-              ].map((q, i) => (
-                <motion.div key={i} initial={{ opacity: 0, x: -20 }} animate={inView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.5, delay: 0.2 + i * 0.2 }} className="border-l-2 border-primary pl-4 py-1">
-                  <p className="font-body text-base text-foreground leading-relaxed mb-2">"{q.quote}"</p>
-                  <span className="font-mono-cipher text-xs text-muted-foreground">— {q.speaker}</span>
-                </motion.div>
-              ))}
-            </div>
-
-            <div className="border border-border bg-background p-4 space-y-3">
-              <div className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest">The reveal</div>
-              <p className="font-display text-xl text-foreground leading-tight">
-                "Stealth isn't a setting.<br />
-                <span className="text-primary">It's mathematics."</span>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={inView ? { opacity: 1, x: 0 } : {}}
+            className="space-y-6"
+          >
+            <div className="space-y-2">
+              <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Live Demo</div>
+              <h2 className="font-display text-3xl md:text-4xl text-foreground">See stealth mode in action.</h2>
+              <p className="font-mono-cipher text-xs text-muted-foreground leading-relaxed max-w-md">
+                Watch a complete stealth job search — from encrypted profile creation to salary reveal — in 30 seconds. All operations are real FHE computations.
               </p>
             </div>
-
-            <div className="space-y-2">
+            <div className="space-y-3">
               {[
-                { label: "LinkedIn Open to Work", visible: true, desc: "Visible to 900M users including your manager" },
-                { label: "Cipher CV Stealth Mode", visible: false, desc: "Encrypted — google.com sees nothing" },
-              ].map((item) => (
-                <div key={item.label} className="flex items-start gap-3 p-3 border border-border">
-                  {item.visible ? <EyeOff className="w-4 h-4 text-destructive/60 mt-0.5 flex-shrink-0" /> : <Lock className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />}
-                  <div>
-                    <div className="font-mono-cipher text-xs font-bold text-foreground">{item.label}</div>
-                    <div className="font-mono-cipher text-xs text-muted-foreground mt-0.5">{item.desc}</div>
+                { label: "Profile encrypted client-side", detail: "CoFHE SDK — never leaves your device" },
+                { label: "Employer blocklist applied", detail: "keccak256(domain) → FHE.blocklist_check" },
+                { label: "Blind matching computed", detail: "FHE.and(salary, exp, skills) → ebool" },
+                { label: "Mutual consent reveal", detail: "decryptForTx + FHE.publishDecryptResult" },
+              ].map((item, i) => (
+                <motion.div
+                  key={item.label}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={inView ? { opacity: 1, x: 0 } : {}}
+                  transition={{ delay: 0.2 + i * 0.1 }}
+                  className="flex items-start gap-3"
+                >
+                  <div className="w-5 h-5 border border-primary/40 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="font-mono-cipher text-primary" style={{ fontSize: "9px" }}>{String(i + 1).padStart(2, "0")}</span>
                   </div>
-                </div>
+                  <div>
+                    <div className="font-mono-cipher text-xs text-foreground">{item.label}</div>
+                    <div className="font-mono-cipher text-muted-foreground" style={{ fontSize: "10px" }}>{item.detail}</div>
+                  </div>
+                </motion.div>
               ))}
             </div>
           </motion.div>
 
-          {/* Interactive demo */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6, delay: 0.2 }} className="p-8">
-            <div className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest mb-4">Interactive demo</div>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={inView ? { opacity: 1, x: 0 } : {}}
+            transition={{ delay: 0.2 }}
+          >
             <StealthDemoVisual />
           </motion.div>
         </div>
@@ -751,54 +948,77 @@ function DemoSection() {
 
 // ─── Technical Section ────────────────────────────────────────────────────────
 function TechnicalSection() {
-  const ref = useRef<HTMLElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-100px" });
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
 
-  const specs = [
-    { label: "Encryption Scheme", value: "TFHE (Torus FHE)" },
-    { label: "Network", value: "Fhenix Testnet" },
-    { label: "Blocklist Method", value: "Encrypted domain hash" },
-    { label: "Key Management", value: "Client-side only" },
-    { label: "Matching Algorithm", value: "Encrypted interval intersection" },
-    { label: "Consent Protocol", value: "Dual-signature reveal" },
-    { label: "Escrow Method", value: "FHE smart contract" },
-    { label: "Data Retention", value: "Zero plaintext stored" },
+  const contracts = [
+    { name: "CipherCV", addr: "0xe9B8...B659", desc: "Core matching contract" },
+    { name: "CipherVault", addr: "0xeff0...A361", desc: "Credential storage" },
+    { name: "CipherGovernance", addr: "0x6D4b...3707", desc: "Encrypted voting" },
+    { name: "CipherEscrow", addr: "0x2d3f...8A6", desc: "Interview insurance" },
+    { name: "CipherCounterOffer", addr: "0xac95...A13d", desc: "Salary negotiation" },
+    { name: "CipherStealth", addr: "0xE4cC...B91", desc: "Employer blocklist" },
+    { name: "CipherBatchMatcher", addr: "0xB89B...D3b", desc: "Batch tournament" },
+    { name: "CipherRegistry", addr: "0x92D5...B79", desc: "Protocol registry" },
   ];
 
   return (
-    <section ref={ref} className="py-24 px-6 md:px-12 lg:px-20 border-t border-border">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-start">
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.7 }} className="space-y-8">
-            <div>
-              <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest mb-4">§ 05 — Technical</div>
-              <h2 className="font-display text-[clamp(2.5rem,4vw,4rem)] leading-tight text-foreground">
-                The stack<br />
-                <span className="text-primary">behind the cipher.</span>
-              </h2>
-            </div>
-            <p className="font-body text-muted-foreground leading-relaxed">
-              Built on Fhenix's fully homomorphic EVM — the only blockchain that can execute arbitrary computations on encrypted data. The employer blocklist is a cryptographic proof, not a privacy setting.
+    <section ref={ref} className="px-6 md:px-12 lg:px-20 py-24 border-b border-border">
+      <div className="max-w-7xl mx-auto space-y-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          className="grid grid-cols-1 lg:grid-cols-2 gap-12"
+        >
+          <div className="space-y-4">
+            <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Architecture</div>
+            <h2 className="font-display text-3xl md:text-4xl text-foreground">8 contracts. 1 protocol.</h2>
+            <p className="font-mono-cipher text-xs text-muted-foreground leading-relaxed">
+              Cipher CV is a suite of 8 smart contracts deployed on Arbitrum Sepolia. Each contract handles a specific privacy primitive — from blind matching to encrypted governance.
             </p>
-            <div className="flex flex-wrap gap-3">
-              <Link to="/app/whitepaper" className="group font-mono-cipher text-xs border border-border px-5 py-2.5 text-muted-foreground hover:border-primary hover:text-foreground transition-all duration-150 flex items-center gap-2">
-                Read Whitepaper <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+            <div className="flex flex-wrap gap-2 pt-2">
+              {["CoFHE SDK", "decryptForView", "decryptForTx", "FHE.publishDecryptResult", "Arbitrum Sepolia"].map(tag => (
+                <span key={tag} className="font-mono-cipher text-xs border border-border text-muted-foreground px-2 py-1">{tag}</span>
+              ))}
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Link to="/app/protocol" className="font-mono-cipher text-xs text-primary hover:text-foreground transition-colors flex items-center gap-1">
+                Protocol Explorer <ArrowRight className="w-3 h-3" />
               </Link>
-              <Link to="/app/protocol" className="group font-mono-cipher text-xs border border-border px-5 py-2.5 text-muted-foreground hover:border-primary hover:text-foreground transition-all duration-150 flex items-center gap-2">
-                Protocol Docs <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+              <Link to="/app/whitepaper" className="font-mono-cipher text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+                Whitepaper <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.7, delay: 0.2 }} className="border border-border">
-            {specs.map((spec, i) => (
-              <motion.div key={spec.label} initial={{ opacity: 0, x: 20 }} animate={inView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.4, delay: 0.3 + i * 0.06 }} className={`flex items-center justify-between px-5 py-3.5 group hover:bg-card transition-colors duration-150 ${i < specs.length - 1 ? "border-b border-border" : ""}`}>
-                <span className="font-mono-cipher text-xs text-muted-foreground"><ScrambleText text={spec.label} speed={25} /></span>
-                <span className="font-mono-cipher text-xs text-foreground group-hover:text-primary transition-colors duration-150"><ScrambleText text={spec.value} speed={25} /></span>
+          <div className="border border-border">
+            {contracts.map((c, i) => (
+              <motion.div
+                key={c.name}
+                initial={{ opacity: 0, x: 10 }}
+                animate={inView ? { opacity: 1, x: 0 } : {}}
+                transition={{ delay: i * 0.06 }}
+                className={`flex items-center justify-between px-5 py-3 hover:bg-secondary/20 transition-colors ${i < contracts.length - 1 ? "border-b border-border" : ""}`}
+              >
+                <div>
+                  <div className="font-mono-cipher text-xs text-foreground">{c.name}</div>
+                  <div className="font-mono-cipher text-muted-foreground" style={{ fontSize: "10px" }}>{c.desc}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono-cipher text-xs text-primary/70">{c.addr}</span>
+                  <a
+                    href={`https://sepolia.arbiscan.io/address/${c.addr}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
               </motion.div>
             ))}
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -806,23 +1026,28 @@ function TechnicalSection() {
 
 // ─── CTA Section ──────────────────────────────────────────────────────────────
 function CTASection() {
-  const ref = useRef<HTMLElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-100px" });
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <section ref={ref} className="py-32 px-6 md:px-12 lg:px-20 border-t border-border relative overflow-hidden">
+    <section ref={ref} className="px-6 md:px-12 lg:px-20 py-32 border-b border-border relative overflow-hidden">
       <FloatingOrb x="20%" y="30%" size={500} delay={0} />
-      <FloatingOrb x="60%" y="50%" size={400} delay={3} />
-      <div className="max-w-5xl mx-auto text-center relative z-10">
-        <motion.div initial={{ opacity: 0, y: 40 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }} className="space-y-10">
-          <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">§ 06 — Start Your Stealth Search</div>
-          <h2 className="font-display text-[clamp(3rem,7vw,7rem)] leading-[0.92] text-foreground">
-            Your manager<br />
-            <span className="text-primary">will never know.</span>
-          </h2>
-          <p className="font-body text-muted-foreground max-w-xl mx-auto leading-relaxed text-base md:text-lg">
-            Join 4,291 professionals who are actively searching — invisibly. Encrypt your profile once. Match forever. Reveal nothing until you choose to.
-          </p>
+      <FloatingOrb x="60%" y="50%" size={300} delay={3} />
+      <div className="max-w-4xl mx-auto relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          className="space-y-8 text-center"
+        >
+          <div className="space-y-4">
+            <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Get Started</div>
+            <h2 className="font-display text-4xl md:text-6xl text-foreground leading-tight">
+              Your manager doesn't need to know.
+            </h2>
+            <p className="font-body text-muted-foreground max-w-xl mx-auto leading-relaxed text-base md:text-lg">
+              Join 4,291 professionals who are actively searching — invisibly. Encrypt your profile once. Match forever. Reveal nothing until you choose to.
+            </p>
+          </div>
           <div className="flex flex-wrap gap-4 justify-center">
             <Link to="/app/candidate" className="group font-mono-cipher text-sm bg-primary text-primary-foreground px-8 py-4 uppercase tracking-widest hover:bg-foreground hover:text-background transition-all duration-150 flex items-center gap-3 font-bold">
               <Ghost className="w-4 h-4" />
@@ -863,7 +1088,7 @@ function Footer() {
             <div className="font-mono-cipher text-xs text-muted-foreground">Stealth job search for the currently employed</div>
             <div className="font-mono-cipher text-xs text-muted-foreground flex items-center gap-1.5">
               <motion.span className="w-1.5 h-1.5 bg-primary rounded-full" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.5, repeat: Infinity }} />
-              Fhenix Testnet Live
+              Arbitrum Sepolia — Wave 3 Live
             </div>
           </div>
           <div className="space-y-3">
@@ -876,7 +1101,7 @@ function Footer() {
           </div>
           <div className="space-y-3">
             <div className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest mb-4">Protocol</div>
-            {[{ label: "Whitepaper", to: "/app/whitepaper" }, { label: "Protocol Docs", to: "/app/protocol" }, { label: "Proof Explorer", to: "/app/proofs" }].map((link) => (
+            {[{ label: "Whitepaper", to: "/app/whitepaper" }, { label: "Protocol Docs", to: "/app/protocol" }, { label: "SDK Docs", to: "/app/sdk" }, { label: "Proof Explorer", to: "/app/proofs" }].map((link) => (
               <Link key={link.label} to={link.to} className="block font-mono-cipher text-xs text-muted-foreground hover:text-primary transition-colors duration-150">
                 <ScrambleText text={link.label} speed={30} />
               </Link>
@@ -893,10 +1118,13 @@ function Footer() {
             <a href="https://fhenix.io" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 font-mono-cipher text-xs text-muted-foreground hover:text-primary transition-colors duration-150">
               <ExternalLink className="w-3 h-3" /> Fhenix
             </a>
+            <a href="https://sepolia.arbiscan.io" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 font-mono-cipher text-xs text-muted-foreground hover:text-primary transition-colors duration-150">
+              <ExternalLink className="w-3 h-3" /> Arbiscan
+            </a>
           </div>
         </div>
         <div className="border-t border-border pt-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="font-mono-cipher text-xs text-muted-foreground">Fhenix Privacy-by-Design Buildathon — Wave 2 — {new Date().getFullYear()}</div>
+          <div className="font-mono-cipher text-xs text-muted-foreground">Fhenix Privacy-by-Design Buildathon — Wave 3 — {new Date().getFullYear()}</div>
           <div className="font-mono-cipher text-xs text-muted-foreground">Contact: <span className="text-primary">0x7f3a...@encrypted</span></div>
         </div>
       </div>
@@ -912,10 +1140,13 @@ export default function Landing() {
       <NoiseTexture />
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className="min-h-screen bg-background text-foreground">
         <HeroSection />
+        <LiveStatsTicker />
+        <ProtocolStatsSection />
         <HowItWorksSection />
         <MoaiTransmission />
         <FeaturesSection />
         <ComparisonSection />
+        <TestimonialsSection />
         <DemoSection />
         <TechnicalSection />
         <CTASection />

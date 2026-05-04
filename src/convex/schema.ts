@@ -164,6 +164,49 @@ const schema = defineSchema(
       .index("by_proposal", ["proposalId"])
       .index("by_voter", ["voterWallet"])
       .index("by_proposal_and_voter", ["proposalId", "voterWallet"]),
+
+    // Wave 3: Token balances (CipherToken — FHE-gated rewards)
+    tokenBalances: defineTable({
+      walletAddress: v.string(),
+      balance: v.number(),
+      stakedBalance: v.number(),
+      participationScore: v.number(),
+      lastClaim: v.number(),
+    }).index("by_wallet", ["walletAddress"]),
+
+    // Wave 3: ATS integration configs (Greenhouse, Lever, Workday)
+    integrationConfigs: defineTable({
+      walletAddress: v.string(),
+      type: v.union(v.literal("greenhouse"), v.literal("lever"), v.literal("workday")),
+      apiKeyHash: v.string(),
+      active: v.boolean(),
+      lastSync: v.number(),
+    }).index("by_wallet", ["walletAddress"]),
+
+    // Wave 3: Referral tracking
+    referrals: defineTable({
+      referrerWallet: v.string(),
+      refereeWallet: v.string(),
+      rewardHash: v.string(),
+      status: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("paid")),
+    }).index("by_referrer", ["referrerWallet"]),
+
+    // Wave 3: Vault credentials (encrypted credential commitments)
+    vaultCredentials: defineTable({
+      walletAddress: v.string(),
+      type: v.union(
+        v.literal("salary_range"),
+        v.literal("experience"),
+        v.literal("skill_vector"),
+        v.literal("identity"),
+        v.literal("education")
+      ),
+      label: v.string(),
+      hash: v.string(),
+      network: v.string(),
+      revealed: v.boolean(),
+      value: v.optional(v.string()),
+    }).index("by_wallet", ["walletAddress"]),
   },
   {
     schemaValidation: false,

@@ -8,12 +8,15 @@
 
 Cipher CV is a decentralized labor market where candidates and employers match **without ever revealing their data**. Salary expectations, experience, and identity are encrypted client-side using keccak256 commitment encoding (viem) before any network call. The matching engine computes compatibility on encrypted inputs — no plaintext ever leaves your browser.
 
-Built for the **Fhenix Privacy-by-Design Buildathon**, Wave 2.
+Built for the **Fhenix Privacy-by-Design Buildathon**, Wave 3.
 
 **Core Products:**
-- **Stealth Mode** — Job search invisible to your current employer
+- **Stealth Mode** — Job search invisible to your current employer (FHE-encrypted blocklist + time-lock)
 - **Counter-Offer Calculator** — Negotiate with encrypted market benchmarks
-- **Interview Insurance** — Guaranteed interviews or your money back
+- **Interview Insurance** — Guaranteed interviews or your money back (escrow-backed)
+- **ZK Vault** — Encrypted credential commitments with on-chain revocation
+- **Protocol Governance** — Encrypted on-chain voting on protocol parameters
+- **SDK** — `@cipher-cv/sdk` public TypeScript SDK for ecosystem integrations
 
 ---
 
@@ -256,8 +259,8 @@ bun install
 | Wave | Status | Description |
 |---|---|---|
 | Wave 1 | ✅ Complete | Landing, app shell, mocked FHE demo, wallet gating |
-| Wave 2 | 🔄 Active | Real CoFHE contracts, Convex data layer, production UI |
-| Wave 3 | 📋 Planned | Production release, ecosystem integration, mainnet |
+| Wave 2 | ✅ Complete | 8 CoFHE contracts live on Arbitrum Sepolia, Convex data layer |
+| Wave 3 | 🔄 In Progress | Mainnet deployment, DAO governance, public SDK, ecosystem integrations |
 
 ### Wave 2 Highlights
 - 8 CoFHE smart contracts with real FHE operations

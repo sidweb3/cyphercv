@@ -62,6 +62,55 @@ export const getEmployerMatches = query({
   },
 });
 
+// Submit a counter-offer request
+export const submitCounterOffer = mutation({
+  args: {
+    walletAddress: v.string(),
+    matchId: v.id("matchRequests"),
+    currentSalary: v.number(),
+    targetIncreasePercent: v.number(),
+    yearsAtCompany: v.number(),
+    role: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const match = await ctx.db.get(args.matchId);
+    if (!match) throw new Error("Match not found");
+
+    // Simulate market data hash
+    const marketDataHash = `0x${Math.random().toString(16).slice(2, 18)}`;
+    const currentSalaryHash = `0x${Math.random().toString(16).slice(2, 18)}`;
+
+    // Compute simulated result
+    const offersNeeded = Math.ceil(3 + (args.targetIncreasePercent / 10));
+    const projectedIncrease = Math.round(args.targetIncreasePercent * (1 + args.yearsAtCompany * 0.05));
+    const negotiationScript = `Based on ${args.yearsAtCompany} years at company and ${args.targetIncreasePercent}% target increase, you should request ${projectedIncrease}% citing market data. Secure ${offersNeeded} competing offers first.`;
+
+    return await ctx.db.insert("counterOfferRequests", {
+      walletAddress: args.walletAddress,
+      currentSalaryHash,
+      targetIncreasePercent: args.targetIncreasePercent,
+      yearsAtCompany: args.yearsAtCompany,
+      role: args.role,
+      marketDataHash,
+      status: "complete",
+      offersNeeded,
+      projectedIncrease,
+      negotiationScript,
+    });
+  },
+});
+
+// Get counter-offer requests for a wallet
+export const getCounterOffers = query({
+  args: { walletAddress: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("counterOfferRequests")
+      .withIndex("by_wallet", q => q.eq("walletAddress", args.walletAddress))
+      .take(20);
+  },
+});
+
 // Consent to reveal salary
 export const consentReveal = mutation({
   args: {

@@ -29,6 +29,50 @@ type AsyncError = {
 
 type GenericError = SyncError | AsyncError;
 
+// ─── Wallet/MetaMask error patterns to suppress ───────────────────────────────
+const SUPPRESSED_ERROR_PATTERNS = [
+  /metamask/i,
+  /ethereum/i,
+  /web3/i,
+  /wallet/i,
+  /provider/i,
+  /injected/i,
+  /window\.ethereum/i,
+  /cannot read propert/i,
+  /is not a function/i,
+  /wagmi/i,
+  /walletconnect/i,
+  /coinbase/i,
+  /rainbow/i,
+  /connector/i,
+  /eip-?1193/i,
+  /user rejected/i,
+  /request accounts/i,
+  /eth_requestAccounts/i,
+  /no ethereum provider/i,
+  /non-ethereum browser/i,
+];
+
+function isWalletError(message: string, stack?: string): boolean {
+  const text = `${message} ${stack ?? ""}`.toLowerCase();
+  return SUPPRESSED_ERROR_PATTERNS.some(p => p.test(text));
+}
+
+// ─── In-app browser detection ─────────────────────────────────────────────────
+function isInAppBrowser(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  return (
+    /FBAN|FBAV|Instagram|Twitter|TikTok|Snapchat|Line\/|MicroMessenger|Telegram/i.test(ua) ||
+    // Generic in-app browser signals
+    (!!ua.match(/Mobile/) && !!(window as any).ReactNativeWebView)
+  );
+}
+
+function getOpenInBrowserUrl(): string {
+  return window.location.href;
+}
+
 async function reportErrorToVly(errorData: {
   error: string;
   stackTrace?: string;
@@ -52,6 +96,70 @@ async function reportErrorToVly(errorData: {
   } catch (error) {
     console.error("Failed to report error to Vly:", error);
   }
+}
+
+// ─── Open in Browser Banner ───────────────────────────────────────────────────
+function OpenInBrowserBanner() {
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed) return null;
+
+  const url = getOpenInBrowserUrl();
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 9999,
+        background: "#ff4500",
+        color: "#fff",
+        padding: "12px 16px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "12px",
+        fontFamily: "monospace",
+        fontSize: "12px",
+      }}
+    >
+      <span style={{ flex: 1 }}>
+        ⚠️ For the best experience and wallet support, open this app in your browser.
+      </span>
+      <div style={{ display: "flex", gap: "8px", alignItems: "center", flexShrink: 0 }}>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            background: "#fff",
+            color: "#ff4500",
+            padding: "6px 12px",
+            fontWeight: "bold",
+            textDecoration: "none",
+            fontSize: "11px",
+            letterSpacing: "0.05em",
+          }}
+        >
+          Open in Browser →
+        </a>
+        <button
+          onClick={() => setDismissed(true)}
+          style={{
+            background: "transparent",
+            border: "1px solid rgba(255,255,255,0.5)",
+            color: "#fff",
+            padding: "4px 8px",
+            cursor: "pointer",
+            fontSize: "11px",
+          }}
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function ErrorDialog({
@@ -120,22 +228,15 @@ class ErrorBoundary extends React.Component<
   }
 
   static getDerivedStateFromError() {
-    // Update state so the next render will show the fallback UI.
     return { hasError: true };
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    // logErrorToMyService(
-    //   error,
-    //   // Example "componentStack":
-    //   //   in ComponentThatThrows (created by App)
-    //   //   in ErrorBoundary (created by App)
-    //   //   in div (created by App)
-    //   //   in App
-    //   info.componentStack,
-    //   // Warning: `captureOwnerStack` is not available in production.
-    //   React.captureOwnerStack(),
-    // );
+    // Don't report wallet errors
+    if (isWalletError(error.message, error.stack)) {
+      this.setState({ hasError: false, error: null });
+      return;
+    }
     reportErrorToVly({
       error: error.message,
       stackTrace: error.stack,
@@ -151,7 +252,6 @@ class ErrorBoundary extends React.Component<
 
   render() {
     if (this.state.hasError) {
-      // You can render any custom fallback UI
       return (
         <ErrorDialog
           error={{
@@ -173,11 +273,16 @@ export function InstrumentationProvider({
   children: React.ReactNode;
 }) {
   const [error, setError] = useState<GenericError | null>(null);
+  const [inAppBrowser] = useState(() => isInAppBrowser());
 
   useEffect(() => {
     const handleError = async (event: ErrorEvent) => {
       try {
-        console.log(event);
+        // Suppress wallet/MetaMask errors silently
+        if (isWalletError(event.message, event.error?.stack)) {
+          event.preventDefault();
+          return;
+        }
         event.preventDefault();
         setError({
           error: event.message,
@@ -203,18 +308,25 @@ export function InstrumentationProvider({
 
     const handleRejection = async (event: PromiseRejectionEvent) => {
       try {
-        console.error(event);
+        const msg = event.reason?.message ?? String(event.reason ?? "");
+        const stack = event.reason?.stack ?? "";
+
+        // Suppress wallet/MetaMask promise rejections silently
+        if (isWalletError(msg, stack)) {
+          event.preventDefault();
+          return;
+        }
 
         if (import.meta.env.VITE_VLY_APP_ID) {
           await reportErrorToVly({
-            error: event.reason.message,
-            stackTrace: event.reason.stack,
+            error: msg,
+            stackTrace: stack,
           });
         }
 
         setError({
-          error: event.reason.message,
-          stack: event.reason.stack,
+          error: msg,
+          stack: stack,
         });
       } catch (error) {
         console.error("Error in handleRejection:", error);
@@ -229,8 +341,10 @@ export function InstrumentationProvider({
       window.removeEventListener("unhandledrejection", handleRejection);
     };
   }, []);
+
   return (
     <>
+      {inAppBrowser && <OpenInBrowserBanner />}
       <ErrorBoundary>{children}</ErrorBoundary>
       {error && <ErrorDialog error={error} setError={setError} />}
     </>
