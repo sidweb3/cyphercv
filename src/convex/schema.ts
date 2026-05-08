@@ -207,6 +207,15 @@ const schema = defineSchema(
       revealed: v.boolean(),
       value: v.optional(v.string()),
     }).index("by_wallet", ["walletAddress"]),
+
+    // CV file uploads (PDF stored via Convex file storage)
+    cvUploads: defineTable({
+      walletAddress: v.string(),
+      storageId: v.string(),
+      fileName: v.string(),
+      fileSize: v.number(),
+      uploadedAt: v.number(),
+    }).index("by_wallet", ["walletAddress"]),
   },
   {
     schemaValidation: false,

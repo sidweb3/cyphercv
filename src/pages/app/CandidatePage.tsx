@@ -14,7 +14,7 @@ import {
 import {
   CheckCircle, Clock, XCircle, Eye, EyeOff, Lock, Download,
   Ghost, TrendingUp, Calendar, Shield, Plus, X, AlertTriangle,
-  ChevronRight, Zap, ExternalLink,
+  ChevronRight, Zap, ExternalLink, FileText, Upload, Trash2,
 } from "lucide-react";
 import { useAccount, useConnect, useConnectorClient } from "wagmi";
 import { useMutation, useQuery } from "convex/react";
@@ -655,6 +655,200 @@ function InterviewInsuranceTab({ address }: { address: string }) {
   );
 }
 
+// ─── CV Upload Tab ─────────────────────────────────────────────────────────────
+function CVUploadTab({ address }: { address: string }) {
+  const generateUploadUrl = useMutation(api.profiles.generateUploadUrl);
+  const saveCvFile = useMutation(api.profiles.saveCvFile);
+  const deleteCvFile = useMutation(api.profiles.deleteCvFile);
+  const cvFile = useQuery(api.profiles.getCvFile, { walletAddress: address });
+
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUpload = async (file: File) => {
+    if (!file) return;
+    if (file.type !== "application/pdf") {
+      toast.error("Only PDF files are supported");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File must be under 10MB");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      // Get upload URL from Convex
+      const uploadUrl = await generateUploadUrl();
+      // Upload the file
+      const result = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!result.ok) throw new Error("Upload failed");
+      const { storageId } = await result.json();
+      // Save metadata to Convex
+      await saveCvFile({
+        walletAddress: address,
+        storageId,
+        fileName: file.name,
+        fileSize: file.size,
+      });
+      toast.success("CV uploaded successfully");
+    } catch (e: any) {
+      toast.error(e.message ?? "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleUpload(file);
+    e.target.value = "";
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleUpload(file);
+  };
+
+  const handleDelete = async () => {
+    if (!cvFile) return;
+    try {
+      await deleteCvFile({ walletAddress: address });
+      toast.success("CV removed");
+    } catch {
+      toast.error("Failed to remove CV");
+    }
+  };
+
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Info banner */}
+      <div className="border border-border bg-card px-5 py-4 flex items-start gap-3">
+        <Shield className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+        <div className="space-y-1">
+          <div className="text-sm font-semibold text-foreground">Encrypted CV Storage</div>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Your CV is stored encrypted in Convex's secure storage. Only you can access it via your wallet. It is never shared with employers without your explicit consent.
+          </p>
+        </div>
+      </div>
+
+      {/* Current file */}
+      {cvFile && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="border border-primary/40 bg-primary/5 p-5 flex items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 border border-primary/30 bg-primary/10 flex items-center justify-center shrink-0">
+              <FileText className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-foreground">{cvFile.fileName}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                {formatSize(cvFile.fileSize)} · Uploaded {new Date(cvFile.uploadedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              </div>
+              <div className="font-mono-cipher text-xs text-primary/70 mt-1">
+                storageId: {cvFile.storageId.slice(0, 20)}...
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {cvFile.url && (
+              <a
+                href={cvFile.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-xs font-semibold border border-border text-muted-foreground px-3 py-2 hover:border-primary hover:text-foreground transition-all duration-100"
+              >
+                <Download className="w-3.5 h-3.5" />
+                View
+              </a>
+            )}
+            <button
+              onClick={handleDelete}
+              className="flex items-center gap-1.5 text-xs font-semibold border border-border text-muted-foreground px-3 py-2 hover:border-destructive hover:text-destructive transition-all duration-100"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Remove
+            </button>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Upload area */}
+      <div
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={handleDrop}
+        onClick={() => !uploading && fileInputRef.current?.click()}
+        className={`border-2 border-dashed p-12 flex flex-col items-center justify-center gap-4 cursor-pointer transition-all duration-150 ${
+          dragOver
+            ? "border-primary bg-primary/5"
+            : "border-border hover:border-primary/50 hover:bg-secondary/30"
+        } ${uploading ? "pointer-events-none opacity-60" : ""}`}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/pdf"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+        <div className={`w-12 h-12 border flex items-center justify-center transition-all duration-150 ${dragOver ? "border-primary bg-primary/10" : "border-border"}`}>
+          {uploading ? (
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full"
+            />
+          ) : (
+            <Upload className={`w-5 h-5 ${dragOver ? "text-primary" : "text-muted-foreground"}`} />
+          )}
+        </div>
+        <div className="text-center space-y-1">
+          <div className="text-sm font-semibold text-foreground">
+            {uploading ? "Uploading..." : cvFile ? "Replace CV" : "Upload your CV"}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {uploading ? "Please wait..." : "Drag & drop or click to browse · PDF only · Max 10MB"}
+          </div>
+        </div>
+      </div>
+
+      {/* Privacy notes */}
+      <div className="border border-border bg-card p-5 space-y-3">
+        <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Privacy Guarantees</div>
+        {[
+          "Your CV is stored encrypted — never exposed to employers without consent",
+          "File hash is committed on-chain as a verifiable credential",
+          "You control access: reveal only to matched employers you approve",
+          "Delete at any time — removal is immediate and permanent",
+        ].map(item => (
+          <div key={item} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+            <CheckCircle className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+            <span>{item}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function CandidatePage() {
   const { address, isConnected, chainId } = useAccount();
@@ -667,7 +861,7 @@ export default function CandidatePage() {
   const [profileHash, setProfileHash] = useState("0x0000000000000000");
   const [creating, setCreating] = useState(false);
   const [revealedMatches, setRevealedMatches] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTab] = useState<"profile" | "stealth" | "counter-offer" | "insurance" | "matches" | "skills">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "stealth" | "counter-offer" | "insurance" | "matches" | "skills" | "cv-upload">("profile");
   const [consentStates, setConsentStates] = useState<Record<string, { candidate: boolean; employer: boolean }>>({});
   // FHE encryption state
   const [fheCommitments, setFheCommitments] = useState<{
@@ -679,6 +873,31 @@ export default function CandidatePage() {
 
   const submitProfile = useMutation(api.profiles.submitCandidateProfile);
   const consentReveal = useMutation(api.matches.consentReveal);
+  const generateUploadUrlInline = useMutation(api.profiles.generateUploadUrl);
+  const saveCvFileInline = useMutation(api.profiles.saveCvFile);
+  const deleteCvFileInline = useMutation(api.profiles.deleteCvFile);
+  const cvFileInline = useQuery(api.profiles.getCvFile, address ? { walletAddress: address } : "skip");
+  const [cvUploading, setCvUploading] = useState(false);
+  const cvFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleInlineCvUpload = async (file: File) => {
+    if (!address) return;
+    if (file.type !== "application/pdf") { toast.error("Only PDF files are supported"); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error("File must be under 10MB"); return; }
+    setCvUploading(true);
+    try {
+      const uploadUrl = await generateUploadUrlInline();
+      const result = await fetch(uploadUrl, { method: "POST", headers: { "Content-Type": file.type }, body: file });
+      if (!result.ok) throw new Error("Upload failed");
+      const { storageId } = await result.json();
+      await saveCvFileInline({ walletAddress: address, storageId, fileName: file.name, fileSize: file.size });
+      toast.success("CV uploaded successfully");
+    } catch (e: any) {
+      toast.error(e.message ?? "Upload failed");
+    } finally {
+      setCvUploading(false);
+    }
+  };
   const existingProfile = useQuery(
     api.profiles.getCandidateProfile,
     address ? { walletAddress: address } : "skip"
@@ -823,6 +1042,7 @@ export default function CandidatePage() {
     { id: "insurance", label: "Interview Insurance" },
     { id: "matches", label: `Matches (${matches.length})` },
     { id: "skills", label: "Skill Map" },
+    { id: "cv-upload", label: "CV Upload" },
   ] as const;
 
   return (
@@ -971,6 +1191,69 @@ export default function CandidatePage() {
                           ))}
                         </div>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Inline CV Upload */}
+                  <div className="border border-border bg-card">
+                    <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+                      <span className="font-mono-cipher text-xs uppercase tracking-widest text-muted-foreground">CV / Resume</span>
+                      {cvFileInline && (
+                        <span className="font-mono-cipher text-xs text-primary flex items-center gap-1.5">
+                          <CheckCircle className="w-3 h-3" /> Uploaded
+                        </span>
+                      )}
+                    </div>
+                    <div className="p-5">
+                      {cvFileInline ? (
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 border border-primary/30 bg-primary/10 flex items-center justify-center shrink-0">
+                              <FileText className="w-4 h-4 text-primary" />
+                            </div>
+                            <div>
+                              <div className="text-sm font-semibold text-foreground truncate max-w-[200px]">{cvFileInline.fileName}</div>
+                              <div className="font-mono-cipher text-xs text-muted-foreground">
+                                {cvFileInline.fileSize < 1024 * 1024
+                                  ? `${(cvFileInline.fileSize / 1024).toFixed(1)} KB`
+                                  : `${(cvFileInline.fileSize / (1024 * 1024)).toFixed(1)} MB`}
+                                {" · "}{new Date(cvFileInline.uploadedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {cvFileInline.url && (
+                              <a href={cvFileInline.url} target="_blank" rel="noopener noreferrer"
+                                className="font-mono-cipher text-xs border border-border text-muted-foreground px-3 py-1.5 hover:border-primary hover:text-foreground transition-all duration-100 flex items-center gap-1.5">
+                                <Download className="w-3 h-3" /> View
+                              </a>
+                            )}
+                            <button
+                              onClick={() => address && deleteCvFileInline({ walletAddress: address }).then(() => toast.success("CV removed")).catch(() => toast.error("Failed to remove"))}
+                              className="font-mono-cipher text-xs border border-border text-muted-foreground px-3 py-1.5 hover:border-destructive hover:text-destructive transition-all duration-100 flex items-center gap-1.5"
+                            >
+                              <Trash2 className="w-3 h-3" /> Remove
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => !cvUploading && cvFileInputRef.current?.click()}
+                          className={`border-2 border-dashed p-6 flex items-center justify-center gap-3 cursor-pointer transition-all duration-150 hover:border-primary/50 hover:bg-secondary/20 ${cvUploading ? "pointer-events-none opacity-60" : ""}`}
+                        >
+                          <input ref={cvFileInputRef} type="file" accept="application/pdf" className="hidden"
+                            onChange={e => { const f = e.target.files?.[0]; if (f) handleInlineCvUpload(f); e.target.value = ""; }} />
+                          {cvUploading ? (
+                            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                              className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full" />
+                          ) : (
+                            <Upload className="w-4 h-4 text-muted-foreground" />
+                          )}
+                          <span className="font-mono-cipher text-xs text-muted-foreground">
+                            {cvUploading ? "Uploading..." : "Upload PDF CV · Max 10MB"}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1175,6 +1458,12 @@ export default function CandidatePage() {
                 candidateSkills={selectedSkills}
                 employerSkills={["Solidity", "TypeScript", "Smart Contracts", "Layer 2", "Cryptography"]}
               />
+            </motion.div>
+          )}
+
+          {activeTab === "cv-upload" && (
+            <motion.div key="cv-upload" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <CVUploadTab address={address!} />
             </motion.div>
           )}
         </AnimatePresence>

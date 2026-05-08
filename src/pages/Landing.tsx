@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useInView, useMotionValue, useSpring } from "f
 import { Link } from "react-router";
 import { MoaiTransmission } from "@/components/MoaiTransmission";
 import { WalletButton, EncryptProfileButton } from "@/components/WalletButton";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { ExternalLink, ArrowRight, Twitter, Github, Lock, Shield, EyeOff, ChevronDown, User, Building2, Key, Ghost, TrendingUp, Calendar, DollarSign, CheckCircle, XCircle, AlertTriangle, Zap, Code2, Activity, Package, Star, Quote } from "lucide-react";
 
 // ─── Custom Cursor ────────────────────────────────────────────────────────────
@@ -419,6 +420,7 @@ function HeroSection() {
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="flex items-center gap-4">
           <Link to="/app/whitepaper" className="font-mono-cipher text-xs text-muted-foreground hover:text-foreground transition-colors hidden md:block">Whitepaper</Link>
           <Link to="/app/protocol" className="font-mono-cipher text-xs text-muted-foreground hover:text-foreground transition-colors hidden md:block">Protocol</Link>
+          <ThemeToggle compact />
           <WalletButton />
         </motion.div>
       </nav>

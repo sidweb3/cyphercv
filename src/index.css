@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /* Google Fonts - Premium Typography */
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 /* DO NOT CHANGE */
 @theme inline {
@@ -46,72 +46,74 @@
 }
 
 /* Cipher CV - Swiss Brutalist Privacy Theme */
+/* Light mode (default) — professional, high-contrast */
 :root {
   --radius: 0rem;
-  --background: #080808;
-  --foreground: #f2efe9;
-  --card: #111111;
-  --card-foreground: #f2efe9;
-  --popover: #111111;
-  --popover-foreground: #f2efe9;
-  --primary: #ff4500;
-  --primary-foreground: #080808;
-  --secondary: #1a1a1a;
-  --secondary-foreground: #f2efe9;
-  --muted: #161616;
-  --muted-foreground: #888480;
-  --accent: #ff4500;
-  --accent-foreground: #080808;
-  --destructive: #ff4500;
-  --border: #2a2a2a;
-  --input: #1a1a1a;
-  --ring: #ff4500;
-  --chart-1: #ff4500;
-  --chart-2: #f2efe9;
-  --chart-3: #888480;
-  --chart-4: #2a2a2a;
-  --chart-5: #444444;
-  --sidebar: #111111;
-  --sidebar-foreground: #f2efe9;
-  --sidebar-primary: #ff4500;
-  --sidebar-primary-foreground: #080808;
-  --sidebar-accent: #1a1a1a;
-  --sidebar-accent-foreground: #f2efe9;
-  --sidebar-border: #2a2a2a;
-  --sidebar-ring: #ff4500;
+  --background: #f8f6f2;
+  --foreground: #0d0d0d;
+  --card: #f0ede7;
+  --card-foreground: #0d0d0d;
+  --popover: #f0ede7;
+  --popover-foreground: #0d0d0d;
+  --primary: #c93200;
+  --primary-foreground: #f8f6f2;
+  --secondary: #e6e2da;
+  --secondary-foreground: #0d0d0d;
+  --muted: #dedad2;
+  --muted-foreground: #3d3a36;
+  --accent: #c93200;
+  --accent-foreground: #f8f6f2;
+  --destructive: #c93200;
+  --border: #c0bbb3;
+  --input: #e6e2da;
+  --ring: #c93200;
+  --chart-1: #c93200;
+  --chart-2: #0d0d0d;
+  --chart-3: #3d3a36;
+  --chart-4: #c0bbb3;
+  --chart-5: #908a82;
+  --sidebar: #ece9e3;
+  --sidebar-foreground: #0d0d0d;
+  --sidebar-primary: #c93200;
+  --sidebar-primary-foreground: #f8f6f2;
+  --sidebar-accent: #e6e2da;
+  --sidebar-accent-foreground: #0d0d0d;
+  --sidebar-border: #c0bbb3;
+  --sidebar-ring: #c93200;
 }
 
+/* Dark mode */
 .dark {
-  --background: #080808;
-  --foreground: #f2efe9;
-  --card: #111111;
-  --card-foreground: #f2efe9;
-  --popover: #111111;
-  --popover-foreground: #f2efe9;
+  --background: #0a0a0a;
+  --foreground: #f0ece6;
+  --card: #141414;
+  --card-foreground: #f0ece6;
+  --popover: #141414;
+  --popover-foreground: #f0ece6;
   --primary: #ff4500;
-  --primary-foreground: #080808;
-  --secondary: #1a1a1a;
-  --secondary-foreground: #f2efe9;
-  --muted: #161616;
-  --muted-foreground: #888480;
+  --primary-foreground: #0a0a0a;
+  --secondary: #1e1e1e;
+  --secondary-foreground: #f0ece6;
+  --muted: #1a1a1a;
+  --muted-foreground: #a09890;
   --accent: #ff4500;
-  --accent-foreground: #080808;
+  --accent-foreground: #0a0a0a;
   --destructive: #ff4500;
-  --border: #2a2a2a;
-  --input: #1a1a1a;
+  --border: #2e2e2e;
+  --input: #1e1e1e;
   --ring: #ff4500;
   --chart-1: #ff4500;
-  --chart-2: #f2efe9;
-  --chart-3: #888480;
-  --chart-4: #2a2a2a;
-  --chart-5: #444444;
-  --sidebar: #111111;
-  --sidebar-foreground: #f2efe9;
+  --chart-2: #f0ece6;
+  --chart-3: #a09890;
+  --chart-4: #2e2e2e;
+  --chart-5: #484848;
+  --sidebar: #141414;
+  --sidebar-foreground: #f0ece6;
   --sidebar-primary: #ff4500;
-  --sidebar-primary-foreground: #080808;
-  --sidebar-accent: #1a1a1a;
-  --sidebar-accent-foreground: #f2efe9;
-  --sidebar-border: #2a2a2a;
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-accent: #1e1e1e;
+  --sidebar-accent-foreground: #f0ece6;
+  --sidebar-border: #2e2e2e;
   --sidebar-ring: #ff4500;
 }
 
@@ -119,15 +121,33 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', 'Space Grotesk', system-ui, sans-serif;
-    font-size: 15px;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 450;
     line-height: 1.6;
   }
   button:not([disabled]),
   [role="button"]:not([disabled]) {
     cursor: pointer;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: var(--foreground);
+  }
+  p {
+    line-height: 1.7;
+    font-weight: 400;
   }
 }
 
@@ -140,27 +160,42 @@
 
 .font-body {
   font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 450;
+  line-height: 1.6;
 }
 
+/* Mono cipher — used for code, hashes, labels, and UI metadata */
 .font-mono-cipher {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.6;
+  letter-spacing: 0.005em;
+}
+
+/* Code/hash specific — keep IBM Plex Mono only for actual code/hashes */
+.font-code {
   font-family: 'IBM Plex Mono', 'Courier New', monospace;
   font-size: 0.8125rem;
+  font-weight: 400;
   line-height: 1.6;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
 }
 
 /* Design Tokens */
 .encrypted-block {
-  background: #080808;
-  color: #ff4500;
+  background: var(--background);
+  color: var(--primary);
   font-family: 'IBM Plex Mono', monospace;
-  border: 1px solid #2a2a2a;
+  font-weight: 500;
+  border: 1px solid var(--border);
   padding: 3px 8px;
   font-size: 0.8125rem;
 }
 
 .brutalist-border {
-  border: 1px solid #2a2a2a;
+  border: 1px solid var(--border);
 }
 
 .accent-flash {
@@ -168,8 +203,8 @@
 }
 
 .accent-flash:hover {
-  background-color: #ff4500;
-  color: #080808;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
 }
 
 /* Custom cursor */
@@ -190,27 +225,22 @@
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-  width: 3px;
+  width: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: #080808;
+  background: var(--background);
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a2a2a;
+  background: var(--border);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #ff4500;
+  background: var(--primary);
 }
 
 /* Selection */
 ::selection {
-  background: #ff4500;
-  color: #080808;
-}
-
-/* Smooth scroll */
-html {
-  scroll-behavior: smooth;
+  background: var(--primary);
+  color: var(--primary-foreground);
 }
 
 /* Keyframes */
@@ -248,4 +278,14 @@ html {
 
 .animate-pulse-ring {
   animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+/* ── Readability Utilities ── */
+.text-label {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }

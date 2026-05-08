@@ -270,3 +270,80 @@ export const getInterviewInsurance = query({
       .unique();
   },
 });
+
+// ─── CV File Upload ───────────────────────────────────────────────────────────
+
+// Generate a short-lived upload URL for Convex file storage
+export const generateUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
+// Save CV file metadata after upload
+export const saveCvFile = mutation({
+  args: {
+    walletAddress: v.string(),
+    storageId: v.string(),
+    fileName: v.string(),
+    fileSize: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("cvUploads")
+      .withIndex("by_wallet", q => q.eq("walletAddress", args.walletAddress))
+      .unique();
+
+    if (existing) {
+      // Delete old file from storage
+      await ctx.storage.delete(existing.storageId as any);
+      await ctx.db.patch(existing._id, {
+        storageId: args.storageId,
+        fileName: args.fileName,
+        fileSize: args.fileSize,
+        uploadedAt: Date.now(),
+      });
+      return existing._id;
+    }
+
+    return await ctx.db.insert("cvUploads", {
+      walletAddress: args.walletAddress,
+      storageId: args.storageId,
+      fileName: args.fileName,
+      fileSize: args.fileSize,
+      uploadedAt: Date.now(),
+    });
+  },
+});
+
+// Get CV file metadata + signed URL
+export const getCvFile = query({
+  args: { walletAddress: v.string() },
+  handler: async (ctx, args) => {
+    const record = await ctx.db
+      .query("cvUploads")
+      .withIndex("by_wallet", q => q.eq("walletAddress", args.walletAddress))
+      .unique();
+
+    if (!record) return null;
+
+    const url = await ctx.storage.getUrl(record.storageId as any);
+    return { ...record, url };
+  },
+});
+
+// Delete CV file
+export const deleteCvFile = mutation({
+  args: { walletAddress: v.string() },
+  handler: async (ctx, args) => {
+    const record = await ctx.db
+      .query("cvUploads")
+      .withIndex("by_wallet", q => q.eq("walletAddress", args.walletAddress))
+      .unique();
+
+    if (!record) return;
+    await ctx.storage.delete(record.storageId as any);
+    await ctx.db.delete(record._id);
+  },
+});

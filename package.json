@@ -16,6 +16,7 @@
     "clean": "rm -rf dist node_modules/.cache"
   },
   "dependencies": {
+    "@auth/core": "^0.37.0",
     "@cofhe/sdk": "^0.4.0",
     "@convex-dev/auth": "^0.0.90",
     "@faker-js/faker": "^10.1.0",
