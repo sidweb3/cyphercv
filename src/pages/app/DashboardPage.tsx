@@ -212,10 +212,20 @@ function ActionCard({ path, icon: Icon, label, desc, cta, accent, badge, delay =
 }
 
 // ─── Network Status Panel ─────────────────────────────────────────────────────
-function NetworkStatusPanel() {
-  const [blockNum, setBlockNum] = useState(18_432_891);
+function NetworkStatusPanel({ chainId }: { chainId?: number }) {
+  const [blockNum, setBlockNum] = useState(7_200_000);
   const [gasPrice, setGasPrice] = useState(0.12);
   const [latency, setLatency] = useState(42);
+
+  const isEthSepolia = chainId === 11155111;
+  const isArbSepolia = chainId === 421614;
+  const isBaseSepolia = chainId === 84532;
+  const networkLabel = isEthSepolia ? "Eth Sepolia" : isArbSepolia ? "Arb Sepolia" : isBaseSepolia ? "Base Sepolia" : "Not Connected";
+  const explorerBase = isEthSepolia
+    ? "https://sepolia.etherscan.io"
+    : isArbSepolia
+    ? "https://sepolia.arbiscan.io"
+    : "https://sepolia.etherscan.io";
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -231,7 +241,14 @@ function NetworkStatusPanel() {
       <div className="flex items-center gap-2">
         <Globe className="w-3.5 h-3.5 text-primary" />
         <span className="font-mono-cipher text-xs uppercase tracking-widest text-muted-foreground">Network</span>
-        <span className="ml-auto font-mono-cipher text-xs text-primary border border-primary/30 px-1.5 py-0.5">Arb Sepolia</span>
+        <a
+          href={explorerBase}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ml-auto font-mono-cipher text-xs text-primary border border-primary/30 px-1.5 py-0.5 hover:bg-primary/10 transition-colors"
+        >
+          {networkLabel}
+        </a>
       </div>
       <div className="space-y-2">
         {[
@@ -239,7 +256,7 @@ function NetworkStatusPanel() {
           { label: "Gas", value: `${gasPrice.toFixed(3)} gwei`, live: false },
           { label: "Latency", value: `${latency}ms`, live: false },
           { label: "FHE Node", value: "Online", live: true },
-          { label: "CoFHE SDK", value: "v0.3.0", live: false },
+          { label: "CoFHE SDK", value: "v0.5.2", live: false },
         ].map(item => (
           <div key={item.label} className="flex items-center justify-between">
             <span className="font-mono-cipher text-xs text-muted-foreground">{item.label}</span>
@@ -255,23 +272,40 @@ function NetworkStatusPanel() {
 }
 
 // ─── Terminal Panel ───────────────────────────────────────────────────────────
-function TerminalPanel() {
+function TerminalPanel({ chainId, hasProfile, address }: { chainId?: number; hasProfile: boolean; address?: string }) {
+  const isEthSepolia = chainId === 11155111;
+  const isArbSepolia = chainId === 421614;
+  const networkFlag = isEthSepolia ? "eth-sepolia" : isArbSepolia ? "arb-sepolia" : "testnet";
+  const chainIdStr = chainId ? String(chainId) : "?";
+  const shortAddr = address ? address.slice(0, 6) + "..." + address.slice(-4) : "0x????";
+
   const lines = [
-    { text: "$ cipher-cv connect --network arbitrum-sepolia", color: "text-muted-foreground" },
-    { text: "✓ Connected to Arbitrum Sepolia (Chain ID: 421614)", color: "text-primary" },
-    { text: "✓ CoFHE SDK initialized — v0.3.0", color: "text-primary" },
+    { text: `$ cipher-cv connect --network ${networkFlag}`, color: "text-muted-foreground" },
+    { text: `✓ Connected (Chain ID: ${chainIdStr}) — wallet: ${shortAddr}`, color: "text-primary" },
+    { text: "✓ CoFHE SDK initialized — v0.5.2", color: "text-primary" },
     { text: "✓ 8 contracts loaded from registry", color: "text-primary" },
-    { text: "$ cipher-cv profile --encrypt", color: "text-muted-foreground" },
-    { text: "  Encrypting salary range... [████████] done", color: "text-foreground/60" },
-    { text: "  Encrypting experience... [████████] done", color: "text-foreground/60" },
-    { text: "  Committing to chain... txHash: 0x7f3a...", color: "text-foreground/60" },
-    { text: "✓ Profile committed — hash: 0x9b2c4e1d...", color: "text-primary" },
+    ...(hasProfile ? [
+      { text: "$ cipher-cv profile --status", color: "text-muted-foreground" },
+      { text: "✓ Profile submitted — encrypted on-chain", color: "text-primary" },
+      { text: "  Salary range: ████████ (FHE encrypted)", color: "text-foreground/60" },
+      { text: "  Experience: ████████ (FHE encrypted)", color: "text-foreground/60" },
+      { text: "✓ Matching pool: active", color: "text-primary" },
+    ] : [
+      { text: "$ cipher-cv profile --status", color: "text-muted-foreground" },
+      { text: "  No profile found — run 'cipher-cv profile --encrypt'", color: "text-foreground/60" },
+      { text: "  → Navigate to Candidate Profile to submit", color: "text-muted-foreground" },
+    ]),
   ];
+
   const [visible, setVisible] = useState(0);
 
   useEffect(() => {
+    setVisible(0);
+  }, [hasProfile, chainId]);
+
+  useEffect(() => {
     if (visible >= lines.length) return;
-    const t = setTimeout(() => setVisible(v => v + 1), 350);
+    const t = setTimeout(() => setVisible(v => v + 1), 300);
     return () => clearTimeout(t);
   }, [visible, lines.length]);
 
@@ -689,7 +723,7 @@ function ATSIntegrationWidget({ address }: { address: string }) {
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, chainId } = useAccount();
   const [walletHash] = useState(generateHash);
   const [showDemo, setShowDemo] = useState(false);
   const [circuitRunning, setCircuitRunning] = useState(false);
@@ -704,7 +738,8 @@ export default function DashboardPage() {
 
   const activeMatches = candidateMatches?.length ?? 0;
   const matchedCount = candidateMatches?.filter(m => m.status === "matched").length ?? 0;
-  const fheOps = stats ? stats.totalRequests * 3 : 0;
+  const totalCandidates = stats?.totalCandidates ?? 0;
+  const fheOps = stats ? (stats.totalRequests * 3) + (stats.totalCandidates * 4) : 0;
   const hasProfile = !!candidateProfile?.submitted;
 
   const sparkData1 = [2, 5, 3, 8, 6, 11, 9, 14, 12, 18];
@@ -747,7 +782,7 @@ export default function DashboardPage() {
 
         {/* ── Stats ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard label="Active Matches" value={activeMatches} sub="total requests" trend="+12%" sparkData={sparkData1} delay={0} />
+          <StatCard label="Encrypted Profiles" value={totalCandidates} sub="on-chain submissions" trend="+12%" sparkData={sparkData1} delay={0} />
           <StatCard label="Matched" value={matchedCount} sub="compatible pairs" trend="+8%" sparkData={sparkData2} delay={0.06} />
           <StatCard label="FHE Ops" value={fheOps} sub="computations run" trend="+24%" sparkData={sparkData3} delay={0.12} />
           <StatCard label="Privacy" value="100%" sub="zero data leaked" sparkData={sparkData4} delay={0.18} />
@@ -771,6 +806,27 @@ export default function DashboardPage() {
               className="font-mono-cipher text-xs bg-primary text-primary-foreground px-4 py-2 uppercase tracking-widest hover:bg-foreground hover:text-background transition-all duration-100"
             >
               Encrypt Profile →
+            </Link>
+          </motion.div>
+        )}
+
+        {hasProfile && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="border border-primary/30 bg-primary/5 p-4 flex items-center justify-between gap-4 flex-wrap"
+          >
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-3.5 h-3.5 text-primary" />
+              <span className="font-mono-cipher text-xs text-primary">
+                Profile encrypted & submitted — you are in the matching pool
+              </span>
+            </div>
+            <Link
+              to="/app/matches"
+              className="font-mono-cipher text-xs border border-primary text-primary px-4 py-2 uppercase tracking-widest hover:bg-primary hover:text-primary-foreground transition-all duration-100"
+            >
+              View Matches →
             </Link>
           </motion.div>
         )}
@@ -806,8 +862,8 @@ export default function DashboardPage() {
 
         {/* ── Network + Terminal ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <NetworkStatusPanel />
-          <TerminalPanel />
+          <NetworkStatusPanel chainId={chainId} />
+          <TerminalPanel chainId={chainId} hasProfile={hasProfile} address={address} />
         </div>
 
         {/* ── Privacy Score ── */}

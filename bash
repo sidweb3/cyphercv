@@ -1,2 +1,2 @@
-npm install
-npx convex dev
+bun install
+bunx hardhat run scripts/deploy.ts --network ethSepolia

@@ -15,6 +15,12 @@ const injectedConnector = injected({
   },
 });
 
+// Use CORS-friendly public RPCs to avoid eth.merkle.io CORS blocks
+const SEPOLIA_RPC = import.meta.env.VITE_SEPOLIA_RPC_URL || 'https://ethereum-sepolia-rpc.publicnode.com';
+const ARB_SEPOLIA_RPC = import.meta.env.VITE_ARB_SEPOLIA_RPC_URL || 'https://sepolia-rollup.arbitrum.io/rpc';
+const BASE_SEPOLIA_RPC = import.meta.env.VITE_BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org';
+const MAINNET_RPC = import.meta.env.VITE_MAINNET_RPC_URL || 'https://ethereum-rpc.publicnode.com';
+
 export const wagmiConfig = createConfig({
   chains: [arbitrumSepolia, sepolia, baseSepolia, mainnet],
   connectors: [
@@ -22,9 +28,9 @@ export const wagmiConfig = createConfig({
     ...(projectId ? [walletConnect({ projectId })] : []),
   ],
   transports: {
-    [arbitrumSepolia.id]: http(),
-    [sepolia.id]: http(),
-    [baseSepolia.id]: http(),
-    [mainnet.id]: http(),
+    [arbitrumSepolia.id]: http(ARB_SEPOLIA_RPC),
+    [sepolia.id]: http(SEPOLIA_RPC),
+    [baseSepolia.id]: http(BASE_SEPOLIA_RPC),
+    [mainnet.id]: http(MAINNET_RPC),
   },
 });

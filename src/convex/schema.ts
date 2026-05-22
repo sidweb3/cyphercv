@@ -44,7 +44,7 @@ const schema = defineSchema(
       timeLockDate: v.optional(v.string()),
     }).index("by_wallet", ["walletAddress"]),
 
-    // Encrypted job postings
+    // Encrypted job postings — multiple per employer
     jobPostings: defineTable({
       walletAddress: v.string(),
       jobHash: v.string(),
@@ -53,6 +53,12 @@ const schema = defineSchema(
       requiredSkillCount: v.number(),
       requiredExpYears: v.number(),
       submitted: v.boolean(),
+      // Multi-job fields
+      title: v.optional(v.string()),
+      description: v.optional(v.string()),
+      skills: v.optional(v.array(v.string())),
+      budget: v.optional(v.number()),
+      active: v.optional(v.boolean()),
     }).index("by_wallet", ["walletAddress"]),
 
     // Match requests

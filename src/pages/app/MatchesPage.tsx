@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { useAccount } from "wagmi";
 import { generateHash, computeMatch } from "@/lib/demoData";
+import { isContractDeployed } from "@/lib/fhenix";
+import { onChainCandidateConsent } from "@/lib/contract-calls";
 import { toast } from "sonner";
 import { Id } from "@/convex/_generated/dataModel";
 
@@ -542,7 +544,7 @@ function CounterOfferHistory() {
 
 // ─── My Matches List ──────────────────────────────────────────────────────────
 function MyMatchesList() {
-  const { address } = useAccount();
+  const { address, chainId } = useAccount();
   const matches = useQuery(api.matches.getCandidateMatches, address ? { walletAddress: address } : "skip") ?? [];
   const consentReveal = useMutation(api.matches.consentReveal);
   const createNotification = useMutation(api.notifications.createNotification);
@@ -557,6 +559,22 @@ function MyMatchesList() {
     if (!address) return;
     setConsenting(matchId);
     try {
+      // Try on-chain consent if on Sepolia
+      const isOnChainNetwork = (chainId === 421614 || chainId === 11155111) && isContractDeployed("CipherCV");
+      if (isOnChainNetwork) {
+        const match = matches.find(m => m._id === matchId);
+        if (match?.employerWallet) {
+          try {
+            toast.info("Sending consent transaction on-chain...");
+            const { hash, explorerUrl } = await onChainCandidateConsent(match.employerWallet as `0x${string}`);
+            toast.success(
+              <span>Consent recorded on-chain — <a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="underline">View tx ↗</a></span>
+            );
+          } catch (onChainErr: any) {
+            toast.error(`On-chain consent failed: ${onChainErr?.shortMessage ?? onChainErr?.message ?? "Unknown error"}`);
+          }
+        }
+      }
       await consentReveal({ matchId, role: "candidate" });
       await createNotification({
         walletAddress: address,

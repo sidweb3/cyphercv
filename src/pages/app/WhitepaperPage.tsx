@@ -172,7 +172,7 @@ export default function WhitepaperPage() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout publicAccess>
       <div className="flex min-h-full">
         {/* TOC Sidebar */}
         <aside className="hidden lg:flex flex-col w-56 shrink-0 border-r border-border bg-card sticky top-0 h-screen overflow-y-auto">

@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { TxProgressBar } from "@/components/TxProgressBar";
 import { Link } from "react-router";
 import { AppLayout } from "./AppLayout";
 import { EncryptedInput } from "@/components/EncryptedInput";
@@ -12,11 +13,19 @@ import {
   getContractExplorerUrl, domainToHash,
 } from "@/lib/fhenix";
 import {
+  onChainSubmitCandidateProfile,
+  onChainCandidateConsent,
+  onChainSetStealthMode,
+  onChainSetTimeLock,
+  onChainBlockDomain,
+  onChainRequestCounterOffer,
+} from "@/lib/contract-calls";
+import {
   CheckCircle, Clock, XCircle, Eye, EyeOff, Lock, Download,
   Ghost, TrendingUp, Calendar, Shield, Plus, X, AlertTriangle,
   ChevronRight, Zap, ExternalLink, FileText, Upload, Trash2,
 } from "lucide-react";
-import { useAccount, useConnect, useConnectorClient } from "wagmi";
+import { useAccount, useConnect, useConnectorClient, usePublicClient } from "wagmi";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
@@ -44,13 +53,17 @@ const ROLES_LIST = ["Software Engineer", "Senior Engineer", "Staff Engineer", "P
 
 // ─── FHE Status Banner ────────────────────────────────────────────────────────
 function FHEStatusBanner({ chainId }: { chainId?: number }) {
-  // Arbitrum Sepolia = 421614, Ethereum Sepolia = 11155111
+  // Arbitrum Sepolia = 421614, Ethereum Sepolia = 11155111, Base Sepolia = 84532
   const isArbSepolia = chainId === 421614;
   const isEthSepolia = chainId === 11155111;
-  const isTestnet = isArbSepolia || isEthSepolia;
+  const isBaseSepolia = chainId === 84532;
+  const isTestnet = isArbSepolia || isEthSepolia || isBaseSepolia;
   const deployed = isContractDeployed();
 
-  if (isArbSepolia && deployed) {
+  const networkName = isArbSepolia ? "Arbitrum Sepolia" : isEthSepolia ? "Ethereum Sepolia" : isBaseSepolia ? "Base Sepolia" : "";
+  const explorerNetwork = isArbSepolia ? "arb-sepolia" : isEthSepolia ? "eth-sepolia" : "base-sepolia";
+
+  if (isTestnet && deployed) {
     return (
       <motion.div
         initial={{ opacity: 0, y: -8 }}
@@ -60,11 +73,11 @@ function FHEStatusBanner({ chainId }: { chainId?: number }) {
         <div className="flex items-center gap-3">
           <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
           <span className="font-mono-cipher text-xs text-primary">
-            Contracts Deployed — Arbitrum Sepolia (Chain ID: 421614)
+            CoFHE Active — {networkName} (Chain ID: {chainId}) — Real FHE Encryption
           </span>
         </div>
         <a
-          href={getContractExplorerUrl("CipherCV", "arb-sepolia")}
+          href={getContractExplorerUrl("CipherCV", explorerNetwork as "arb-sepolia" | "eth-sepolia" | "base-sepolia")}
           target="_blank"
           rel="noopener noreferrer"
           className="font-mono-cipher text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
@@ -77,10 +90,10 @@ function FHEStatusBanner({ chainId }: { chainId?: number }) {
 
   if (isTestnet && !deployed) {
     return (
-      <div className="border border-border bg-card px-4 py-3 flex items-center gap-3">
-        <AlertTriangle className="w-3.5 h-3.5 text-muted-foreground" />
-        <span className="font-mono-cipher text-xs text-muted-foreground">
-          Connected to testnet — deploy contracts to enable on-chain matching
+      <div className="border border-primary/30 bg-primary/5 px-4 py-3 flex items-center gap-3">
+        <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+        <span className="font-mono-cipher text-xs text-primary">
+          CoFHE Ready — {networkName} (Chain ID: {chainId}) — FHE encryption active, contracts not yet deployed
         </span>
       </div>
     );
@@ -90,7 +103,7 @@ function FHEStatusBanner({ chainId }: { chainId?: number }) {
     <div className="border border-border bg-card px-4 py-3 flex items-center gap-3">
       <Lock className="w-3.5 h-3.5 text-muted-foreground" />
       <span className="font-mono-cipher text-xs text-muted-foreground">
-        Demo mode — connect to Arbitrum Sepolia (Chain ID: 421614) for on-chain matching
+        Demo mode — connect to Ethereum Sepolia (11155111) or Arbitrum Sepolia (421614) for real FHE
       </span>
     </div>
   );
@@ -100,12 +113,22 @@ function FHEStatusBanner({ chainId }: { chainId?: number }) {
 function StealthModeTab({ address }: { address: string }) {
   const profile = useQuery(api.profiles.getCandidateProfile, { walletAddress: address });
   const updateStealth = useMutation(api.profiles.updateStealthSettings);
+  const { data: walletClient } = useConnectorClient();
+  const publicClient = usePublicClient();
 
   const [stealthEnabled, setStealthEnabled] = useState(profile?.stealthEnabled ?? false);
   const [blockedDomains, setBlockedDomains] = useState<string[]>(profile?.blockedDomains ?? []);
   const [timeLockDate, setTimeLockDate] = useState(profile?.timeLockDate ?? "");
   const [customDomain, setCustomDomain] = useState("");
   const [saving, setSaving] = useState(false);
+  const [stealthTxStep, setStealthTxStep] = useState(-1);
+
+  const STEALTH_STEPS = [
+    { label: "Preparing stealth config", detail: "Hashing domain blocklist..." },
+    { label: "Awaiting wallet approval", detail: "Your wallet popup should open — this can take up to 60 seconds. Please wait." },
+    { label: "Broadcasting on-chain", detail: "Sending to Ethereum Sepolia..." },
+    { label: "Finalizing settings", detail: "Persisting encrypted settings..." },
+  ];
 
   const addDomain = (domain: string) => {
     const d = domain.toLowerCase().trim();
@@ -118,13 +141,59 @@ function StealthModeTab({ address }: { address: string }) {
   const handleSave = async () => {
     if (!profile) { toast.error("Submit your profile first"); return; }
     setSaving(true);
+    setStealthTxStep(0);
     try {
-      await new Promise(r => setTimeout(r, 1200));
+      const isOnChainNetwork = isContractDeployed("CipherStealth");
+
+      if (isOnChainNetwork && walletClient && publicClient) {
+        setStealthTxStep(1); // Awaiting wallet approval
+        try {
+          if (stealthEnabled) {
+            const { hash, explorerUrl } = await onChainSetStealthMode(1);
+            setStealthTxStep(2); // Broadcasting
+            toast.success(
+              <span>Stealth mode set on-chain — <a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="underline">View tx</a></span>
+            );
+          }
+          for (const domain of blockedDomains) {
+            const dHash = domainToHash(domain) as `0x${string}`;
+            const { hash: dHash2, explorerUrl: dUrl } = await onChainBlockDomain(dHash);
+            toast.success(
+              <span>Domain blocked on-chain ({domain}) — <a href={dUrl} target="_blank" rel="noopener noreferrer" className="underline">View tx</a></span>
+            );
+          }
+          if (timeLockDate) {
+            const { explorerUrl } = await onChainSetTimeLock(new Date(timeLockDate));
+            toast.success(
+              <span>Time lock set on-chain — <a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="underline">View tx</a></span>
+            );
+          }
+        } catch (onChainErr: any) {
+          toast.error(`On-chain tx failed: ${onChainErr?.shortMessage ?? onChainErr?.message ?? "Unknown error"}`);
+        }
+      }
+
+      setStealthTxStep(3); // Finalizing
       await updateStealth({ walletAddress: address, stealthEnabled, blockedDomains, timeLockDate: timeLockDate || undefined });
+      setStealthTxStep(STEALTH_STEPS.length); // Done
       toast.success("Stealth settings encrypted & saved");
     } catch { toast.error("Failed to save stealth settings"); }
     finally { setSaving(false); }
   };
+
+  const stealthBtnLabel = !profile
+    ? "Submit Profile First"
+    : !saving
+    ? "Save Stealth Settings →"
+    : stealthTxStep === 0
+    ? "Preparing..."
+    : stealthTxStep === 1
+    ? "Waiting for wallet — please don't close this page..."
+    : stealthTxStep === 2
+    ? "Broadcasting on-chain..."
+    : stealthTxStep === 3
+    ? "Saving settings..."
+    : "Done ✓";
 
   return (
     <div className="space-y-6">
@@ -182,7 +251,6 @@ function StealthModeTab({ address }: { address: string }) {
           <p className="font-mono-cipher text-xs text-muted-foreground leading-relaxed">
             Add your current employer's domain. The blocklist is encrypted — employers cannot see who blocked them.
           </p>
-          {/* Quick add common domains */}
           <div className="flex flex-wrap gap-2">
             {COMMON_DOMAINS.map(domain => (
               <button
@@ -198,7 +266,6 @@ function StealthModeTab({ address }: { address: string }) {
               </button>
             ))}
           </div>
-          {/* Custom domain input */}
           <div className="flex gap-2">
             <input
               value={customDomain}
@@ -215,7 +282,6 @@ function StealthModeTab({ address }: { address: string }) {
               <Plus className="w-3 h-3" /> Add
             </button>
           </div>
-          {/* Active blocklist */}
           {blockedDomains.length > 0 && (
             <div className="space-y-2">
               <div className="font-mono-cipher text-muted-foreground" style={{ fontSize: "10px" }}>ACTIVE BLOCKLIST — ENCRYPTED ON-CHAIN</div>
@@ -274,8 +340,16 @@ function StealthModeTab({ address }: { address: string }) {
         disabled={saving || !profile}
         className="w-full py-4 bg-primary text-primary-foreground font-bold text-sm uppercase tracking-widest font-mono-cipher disabled:opacity-60 transition-all duration-100 hover:bg-foreground hover:text-background"
       >
-        {saving ? "Encrypting & Saving..." : !profile ? "Submit Profile First" : "Save Stealth Settings →"}
+        {stealthBtnLabel}
       </button>
+      <AnimatePresence>
+        {saving && (
+          <TxProgressBar
+            steps={STEALTH_STEPS}
+            currentStep={stealthTxStep}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -284,18 +358,50 @@ function StealthModeTab({ address }: { address: string }) {
 function CounterOfferTab({ address }: { address: string }) {
   const submitCounterOffer = useMutation(api.profiles.submitCounterOffer);
   const existingReport = useQuery(api.profiles.getCounterOffer, { walletAddress: address });
+  const { data: walletClient } = useConnectorClient();
+  const publicClient = usePublicClient();
 
   const [currentSalary, setCurrentSalary] = useState(120000);
   const [targetIncrease, setTargetIncrease] = useState(20);
   const [yearsAtCompany, setYearsAtCompany] = useState(3);
   const [role, setRole] = useState("Senior Engineer");
   const [computing, setComputing] = useState(false);
+  const [counterTxStep, setCounterTxStep] = useState(-1);
   const [showReport, setShowReport] = useState(!!existingReport?.status);
+
+  const COUNTER_STEPS = [
+    { label: "Encrypting salary inputs", detail: "keccak256 commitment encoding..." },
+    { label: "Awaiting wallet approval", detail: "Your wallet popup should open — this can take up to 60 seconds. Please wait and don't close this page." },
+    { label: "Broadcasting on-chain", detail: "Sending to CipherCounterOffer contract..." },
+    { label: "Querying market data", detail: "Running FHE comparison (blind)..." },
+    { label: "Generating negotiation script", detail: "Computing optimal strategy..." },
+  ];
 
   const handleCompute = async () => {
     setComputing(true);
+    setCounterTxStep(0);
     try {
-      await new Promise(r => setTimeout(r, 2500));
+      const isOnChain = isContractDeployed("CipherCounterOffer");
+      if (isOnChain && walletClient && publicClient) {
+        setCounterTxStep(1); // Awaiting wallet approval
+        try {
+          const { hash, explorerUrl } = await onChainRequestCounterOffer(
+            walletClient as any,
+            publicClient as any,
+            { currentSalary, targetIncrease, yearsAtCompany, role }
+          );
+          setCounterTxStep(2); // Broadcasting
+          toast.success(
+            <span>Counter-offer submitted on-chain — <a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="underline">View tx</a></span>
+          );
+        } catch (onChainErr: any) {
+          toast.error(`On-chain tx failed: ${onChainErr?.shortMessage ?? onChainErr?.message ?? "Unknown error"}`);
+        }
+      } else {
+        setCounterTxStep(3); // Skip to market data
+        await new Promise(r => setTimeout(r, 1200));
+      }
+      setCounterTxStep(4); // Generating script
       await submitCounterOffer({
         walletAddress: address,
         currentSalaryHash: commitSalary(address, currentSalary),
@@ -304,11 +410,26 @@ function CounterOfferTab({ address }: { address: string }) {
         role,
         marketDataHash: commitMarketData(address, role, targetIncrease),
       });
+      setCounterTxStep(COUNTER_STEPS.length); // Done
       setShowReport(true);
       toast.success("Counter-offer report generated");
     } catch { toast.error("Failed to compute report"); }
     finally { setComputing(false); }
   };
+
+  const counterBtnLabel = !computing
+    ? "Generate Counter-Offer Report →"
+    : counterTxStep === 0
+    ? "Encrypting inputs..."
+    : counterTxStep === 1
+    ? "Waiting for wallet — please don't close this page..."
+    : counterTxStep === 2
+    ? "Broadcasting on-chain..."
+    : counterTxStep === 3
+    ? "Querying market data..."
+    : counterTxStep === 4
+    ? "Generating strategy..."
+    : "Done ✓";
 
   const report = existingReport;
 
@@ -398,18 +519,17 @@ function CounterOfferTab({ address }: { address: string }) {
             disabled={computing}
             className="w-full py-4 bg-primary text-primary-foreground font-bold text-sm uppercase tracking-widest font-mono-cipher disabled:opacity-60 transition-all duration-100 hover:bg-foreground hover:text-background"
           >
-            {computing ? "Computing Strategy..." : "Generate Counter-Offer Report →"}
+            {counterBtnLabel}
           </button>
 
-          {computing && (
-            <div className="border border-border p-4 space-y-2">
-              {["Encrypting salary inputs...", "Querying market data (blind)...", "Running FHE comparison...", "Generating negotiation script..."].map((step, i) => (
-                <motion.div key={step} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.5 }} className="font-mono-cipher text-xs text-muted-foreground flex items-center gap-2">
-                  <span className="text-primary animate-pulse">▋</span> {step}
-                </motion.div>
-              ))}
-            </div>
-          )}
+          <AnimatePresence>
+            {computing && (
+              <TxProgressBar
+                steps={COUNTER_STEPS}
+                currentStep={counterTxStep}
+              />
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Report panel */}
@@ -853,6 +973,7 @@ function CVUploadTab({ address }: { address: string }) {
 export default function CandidatePage() {
   const { address, isConnected, chainId } = useAccount();
   const { data: connectorClient } = useConnectorClient();
+  const publicClient = usePublicClient();
   const [experience, setExperience] = useState(5);
   const [skillLevel, setSkillLevel] = useState(7);
   const [minSalary, setMinSalary] = useState(100000);
@@ -860,6 +981,15 @@ export default function CandidatePage() {
   const [selectedSkills, setSelectedSkills] = useState<string[]>(["Solidity", "TypeScript", "React"]);
   const [profileHash, setProfileHash] = useState("0x0000000000000000");
   const [creating, setCreating] = useState(false);
+  const [profileTxStep, setProfileTxStep] = useState(-1);
+
+  const PROFILE_STEPS = [
+    { label: "Encrypting profile data", detail: "FHE commitment encoding for salary, experience, skills..." },
+    { label: "Awaiting wallet approval", detail: "Your wallet popup should open — this can take up to 60 seconds. Please wait and don't close this page." },
+    { label: "Broadcasting on-chain", detail: "Sending encrypted profile to CipherCV contract..." },
+    { label: "Waiting for confirmation", detail: "On-chain confirmation may take 15–30 seconds..." },
+    { label: "Finalizing profile", detail: "Persisting encrypted commitments..." },
+  ];
   const [revealedMatches, setRevealedMatches] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<"profile" | "stealth" | "counter-offer" | "insurance" | "matches" | "skills" | "cv-upload">("profile");
   const [consentStates, setConsentStates] = useState<Record<string, { candidate: boolean; employer: boolean }>>({});
@@ -926,6 +1056,23 @@ export default function CandidatePage() {
 
   const handleCandidateConsent = async (matchId: string) => {
     try {
+      // Try on-chain consent if on Arbitrum Sepolia
+      const isOnChain = (chainId === 421614 || chainId === 11155111) && isContractDeployed("CipherCV");
+      if (isOnChain) {
+        // Extract employer wallet from match data
+        const match = matches.find(m => m._id === matchId);
+        if (match?.employerWallet) {
+          try {
+            toast.info("Sending consent transaction on-chain...");
+            const { hash, explorerUrl } = await onChainCandidateConsent(match.employerWallet as `0x${string}`);
+            toast.success(
+              <span>Consent recorded on-chain — <a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="underline">View tx</a></span>
+            );
+          } catch (onChainErr: any) {
+            toast.error(`On-chain consent failed: ${onChainErr?.shortMessage ?? onChainErr?.message ?? "Unknown error"}`);
+          }
+        }
+      }
       await consentReveal({ matchId: matchId as any, role: "candidate" });
       setConsentStates(prev => ({
         ...prev,
@@ -944,6 +1091,7 @@ export default function CandidatePage() {
   const handleCreateProfile = async () => {
     if (!address) return;
     setCreating(true);
+    setProfileTxStep(0);
 
     try {
       let profileHashVal: string;
@@ -951,18 +1099,17 @@ export default function CandidatePage() {
       let salaryHashVal: string;
       let skillsHashVal: string;
 
+      const isArbSepolia = chainId === 421614 && isContractDeployed("CipherCV");
       const isSepolia = chainId === 11155111;
       const provider = connectorClient?.transport;
 
-      if (isSepolia && provider && isContractDeployed()) {
-        // ── Real FHE path ──────────────────────────────────────────────────
-        toast.info("Encrypting with FHE...");
-
+      if (isArbSepolia && connectorClient && publicClient) {
+        setProfileTxStep(1); // Awaiting wallet approval
         const [encMin, encMax, encExp, encSkill] = await Promise.all([
           encryptSalary(provider, minSalary),
           encryptSalary(provider, maxSalary),
           encryptExperience(provider, experience),
-          encryptSkillScore(provider, skillLevel * 10), // 0-10 → 0-100
+          encryptSkillScore(provider, skillLevel * 10),
         ]);
 
         profileHashVal = encryptedToHex(encMin);
@@ -970,7 +1117,6 @@ export default function CandidatePage() {
         experienceHashVal = encryptedToHex(encExp);
         skillsHashVal = encryptedToHex(encSkill);
 
-        // Store commitments for display
         setFheCommitments({
           minSalary: formatEncryptedCommitment(encMin),
           maxSalary: formatEncryptedCommitment(encMax),
@@ -978,9 +1124,56 @@ export default function CandidatePage() {
           skillScore: formatEncryptedCommitment(encSkill),
         });
 
-        toast.success("FHE encryption complete — ciphertexts ready");
+        try {
+          setProfileTxStep(2); // Broadcasting
+          const { hash, explorerUrl } = await onChainSubmitCandidateProfile(
+            connectorClient as any,
+            publicClient as any,
+            { minSalary, maxSalary, experience, skillScore: skillLevel * 10 }
+          );
+          setProfileTxStep(3); // Waiting for confirmation
+          toast.success(
+            <span>Profile submitted on-chain — <a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="underline">View tx ↗</a></span>
+          );
+        } catch (onChainErr: any) {
+          toast.error(`On-chain tx failed: ${onChainErr?.shortMessage ?? onChainErr?.message ?? "Unknown error"}`);
+        }
+      } else if (isSepolia && connectorClient && publicClient && isContractDeployed()) {
+        setProfileTxStep(1); // Awaiting wallet approval
+        const [encMin, encMax, encExp, encSkill] = await Promise.all([
+          encryptSalary(provider, minSalary),
+          encryptSalary(provider, maxSalary),
+          encryptExperience(provider, experience),
+          encryptSkillScore(provider, skillLevel * 10),
+        ]);
+
+        profileHashVal = encryptedToHex(encMin);
+        salaryHashVal = encryptedToHex(encMax);
+        experienceHashVal = encryptedToHex(encExp);
+        skillsHashVal = encryptedToHex(encSkill);
+
+        setFheCommitments({
+          minSalary: formatEncryptedCommitment(encMin),
+          maxSalary: formatEncryptedCommitment(encMax),
+          experience: formatEncryptedCommitment(encExp),
+          skillScore: formatEncryptedCommitment(encSkill),
+        });
+
+        try {
+          setProfileTxStep(2); // Broadcasting
+          const { hash, explorerUrl } = await onChainSubmitCandidateProfile(
+            connectorClient as any,
+            publicClient as any,
+            { minSalary, maxSalary, experience, skillScore: skillLevel * 10 }
+          );
+          setProfileTxStep(3); // Waiting for confirmation
+          toast.success(
+            <span>Profile submitted on-chain — <a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="underline">View tx ↗</a></span>
+          );
+        } catch (onChainErr: any) {
+          toast.error(`On-chain tx failed: ${onChainErr?.shortMessage ?? onChainErr?.message ?? "Unknown error"}`);
+        }
       } else {
-        // ── Commitment hash path (real keccak256 commitments) ──────────────
         profileHashVal = commitProfile(address, minSalary, maxSalary, experience, selectedSkills.length);
         salaryHashVal = commitSalary(address, minSalary);
         experienceHashVal = commitExperience(address, experience);
@@ -993,7 +1186,7 @@ export default function CandidatePage() {
         });
       }
 
-      // Persist to Convex (stores ciphertext commitments, not plaintext)
+      setProfileTxStep(4); // Finalizing
       await submitProfile({
         walletAddress: address,
         profileHash: profileHashVal,
@@ -1262,44 +1455,24 @@ export default function CandidatePage() {
                     disabled={creating}
                     className="w-full py-4 bg-primary text-primary-foreground font-bold text-sm uppercase tracking-widest font-mono-cipher disabled:opacity-60 transition-all duration-100 hover:bg-foreground hover:text-background"
                   >
-                    {creating
-                      ? chainId === 11155111 && isContractDeployed()
-                        ? "Encrypting with FHE..."
-                        : "Encrypting..."
-                      : existingProfile
-                        ? "Update Encrypted Profile →"
-                        : "Submit Encrypted Profile →"}
+                    {!creating
+                      ? existingProfile ? "Update Encrypted Profile →" : "Submit Encrypted Profile →"
+                      : profileTxStep === 0 ? "Encrypting profile data..."
+                      : profileTxStep === 1 ? "Waiting for wallet — please don't close this page..."
+                      : profileTxStep === 2 ? "Broadcasting on-chain..."
+                      : profileTxStep === 3 ? "Waiting for confirmation..."
+                      : profileTxStep === 4 ? "Finalizing..."
+                      : "Done ✓"}
                   </button>
 
-                  {creating && (
-                    <div className="border border-border p-4 space-y-2">
-                      {(chainId === 11155111 && isContractDeployed()
-                        ? [
-                            "Fetching Sepolia contract state...",
-                            "Encrypting salary range (euint32)...",
-                            "Encrypting experience (euint32)...",
-                            "Encrypting skill score (euint32)...",
-                            "Storing ciphertext commitments...",
-                          ]
-                        : [
-                            "Generating profile hash...",
-                            "Encrypting salary range...",
-                            "Encrypting experience...",
-                            "Storing commitments...",
-                          ]
-                      ).map((step, i) => (
-                        <motion.div
-                          key={step}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: i * 0.3 }}
-                          className="font-mono-cipher text-xs text-muted-foreground flex items-center gap-2"
-                        >
-                          <span className="text-primary animate-pulse">▋</span> {step}
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
+                  <AnimatePresence>
+                    {creating && (
+                      <TxProgressBar
+                        steps={PROFILE_STEPS}
+                        currentStep={profileTxStep}
+                      />
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 {/* Right: Status */}

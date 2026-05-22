@@ -119,14 +119,14 @@ export const submitJobPosting = mutation({
   },
 });
 
-// Get job posting by wallet
+// Get job posting by wallet (returns most recent)
 export const getJobPosting = query({
   args: { walletAddress: v.string() },
   handler: async (ctx, args) => {
     return await ctx.db
       .query("jobPostings")
       .withIndex("by_wallet", q => q.eq("walletAddress", args.walletAddress))
-      .unique();
+      .first();
   },
 });
 
@@ -143,6 +143,69 @@ export const getAllCandidateProfiles = query({
   args: {},
   handler: async (ctx) => {
     return await ctx.db.query("encryptedProfiles").take(100);
+  },
+});
+
+// Create a new job posting (always inserts — supports multiple jobs per employer)
+export const createJobPosting = mutation({
+  args: {
+    walletAddress: v.string(),
+    title: v.string(),
+    description: v.string(),
+    skills: v.array(v.string()),
+    budget: v.number(),
+    requiredExpYears: v.number(),
+    jobHash: v.string(),
+    budgetHash: v.string(),
+    expHash: v.string(),
+    requiredSkillCount: v.number(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("jobPostings", {
+      walletAddress: args.walletAddress,
+      title: args.title,
+      description: args.description,
+      skills: args.skills,
+      budget: args.budget,
+      jobHash: args.jobHash,
+      budgetHash: args.budgetHash,
+      expHash: args.expHash,
+      requiredSkillCount: args.requiredSkillCount,
+      requiredExpYears: args.requiredExpYears,
+      submitted: true,
+      active: true,
+    });
+  },
+});
+
+// Get all job postings for a wallet
+export const getJobPostings = query({
+  args: { walletAddress: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("jobPostings")
+      .withIndex("by_wallet", q => q.eq("walletAddress", args.walletAddress))
+      .take(50);
+  },
+});
+
+// Delete a job posting
+export const deleteJobPosting = mutation({
+  args: { jobId: v.id("jobPostings"), walletAddress: v.string() },
+  handler: async (ctx, args) => {
+    const job = await ctx.db.get(args.jobId);
+    if (!job || job.walletAddress !== args.walletAddress) throw new Error("Not found or unauthorized");
+    await ctx.db.delete(args.jobId);
+  },
+});
+
+// Toggle job active status
+export const toggleJobActive = mutation({
+  args: { jobId: v.id("jobPostings"), walletAddress: v.string() },
+  handler: async (ctx, args) => {
+    const job = await ctx.db.get(args.jobId);
+    if (!job || job.walletAddress !== args.walletAddress) throw new Error("Not found or unauthorized");
+    await ctx.db.patch(args.jobId, { active: !(job.active ?? true) });
   },
 });
 
@@ -170,7 +233,7 @@ export const submitCounterOffer = mutation({
     const existing = await ctx.db
       .query("counterOfferRequests")
       .withIndex("by_wallet", q => q.eq("walletAddress", args.walletAddress))
-      .unique();
+      .first();
 
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -209,7 +272,8 @@ export const getCounterOffer = query({
     return await ctx.db
       .query("counterOfferRequests")
       .withIndex("by_wallet", q => q.eq("walletAddress", args.walletAddress))
-      .unique();
+      .order("desc")
+      .first();
   },
 });
 

@@ -14,6 +14,9 @@ export default defineConfig({
       "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
     },
   },
+  worker: {
+    format: "es",
+  },
   build: {
     sourcemap: false,
     rollupOptions: {
@@ -37,8 +40,10 @@ export default defineConfig({
       'viem',
       '@rainbow-me/rainbowkit',
       '@tanstack/react-query',
+      'iframe-shared-storage',
+      'tweetnacl',
     ],
-    exclude: ['three', '@react-three/fiber', '@react-three/drei'],
+    exclude: ['three', '@react-three/fiber', '@react-three/drei', '@cofhe/sdk', '@cofhe/sdk/adapters', '@cofhe/sdk/chains'],
   },
   server: {
     hmr: true,

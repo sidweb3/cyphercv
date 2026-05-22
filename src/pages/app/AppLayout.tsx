@@ -379,7 +379,7 @@ function NavItem({ item, active, collapsed, onClick }: {
   );
 }
 
-export function AppLayout({ children }: { children: React.ReactNode }) {
+export function AppLayout({ children, publicAccess }: { children: React.ReactNode; publicAccess?: boolean }) {
   const location = useLocation();
   const { isConnected } = useAccount();
   const [collapsed, setCollapsed] = useState(false);
@@ -395,7 +395,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     sessionStorage.setItem("cipher-onboarding-seen", "1");
   };
 
-  if (!isConnected) return <WalletGate />;
+  if (!isConnected && !publicAccess) return <WalletGate />;
 
   const isActive = (path: string) =>
     path === "/app" ? location.pathname === "/app" : location.pathname === path;

@@ -2,14 +2,13 @@
  * CoFHE Client — Frontend Integration
  *
  * Uses keccak256-based commitment encoding (viem) as the encryption layer
- * until CoFHE SDK is available on Sepolia. All commitments are deterministic
- * and cryptographically bound to the input values.
+ * for demo/fallback mode. On Arbitrum Sepolia with contracts deployed,
+ * real CoFHE SDK encryption is used via cofhe-client.ts.
  *
  * Supported networks: Ethereum Sepolia, Arbitrum Sepolia, Base Sepolia
  */
 
 import { keccak256, encodePacked } from "viem";
-import { CofheClient, Encryptable, FheTypes } from "@cofhe/sdk";
 // Note: keccak256 and encodePacked are imported once above — do not re-import
 
 // ─── Contract Addresses ───────────────────────────────────────────────────────
@@ -27,27 +26,12 @@ export const CONTRACTS = {
 
 export const CIPHER_CV_CONTRACT = CONTRACTS.CipherCV;
 
-// ─── CoFheClient Singleton ────────────────────────────────────────────────────
-
-let _client: CofheClient | null = null;
-
-export async function getCoFheClient(signer: { provider: unknown }): Promise<CofheClient> {
-  if (_client) return _client;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  _client = (signer as any)._client ?? null;
-  return _client!;
-}
-
-export function resetCoFheClient(): void {
-  _client = null;
-}
-
 // ─── Encryption Helpers ───────────────────────────────────────────────────────
 
 /**
  * Real commitment encoding: uses keccak256(encodePacked(type, value, walletSalt))
  * to produce a deterministic 32-byte ciphertext commitment.
- * This is the correct approach until CoFHE SDK is available on Sepolia.
+ * Used as fallback when CoFHE SDK is not available.
  */
 function encodeCommitment(type: string, value: number, walletSalt?: string): { data: Uint8Array } {
   const salt = walletSalt ?? "cipher-cv-v2";
@@ -124,7 +108,8 @@ export async function encryptUint32(
 
 /**
  * Decrypt an encrypted value for view (UI reveal).
- * Returns 0n until CoFHE is available on Sepolia — commitment hashes are one-way.
+ * On Arbitrum Sepolia with real CoFHE SDK: uses decryptForViewUI from cofhe-client.
+ * Otherwise returns 0n — commitment hashes are one-way.
  */
 export async function decryptForView(
   _signer: unknown,
@@ -196,7 +181,3 @@ export function getContractExplorerUrl(name: keyof typeof CONTRACTS = "CipherCV"
 export function domainToHash(domain: string): string {
   return keccak256(encodePacked(["string"], [domain.toLowerCase().trim()]));
 }
-
-// ─── Re-exports ───────────────────────────────────────────────────────────────
-
-export { Encryptable, FheTypes };

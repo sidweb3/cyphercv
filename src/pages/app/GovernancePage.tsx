@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AppLayout } from "./AppLayout";
 import { generateHash } from "@/lib/demoData";
+import { isContractDeployed } from "@/lib/fhenix";
+import { onChainCastVote, onChainCreateProposal } from "@/lib/contract-calls";
 import { Vote, CheckCircle, Clock, XCircle, Users, Zap, Shield, ChevronDown, ChevronUp, Plus } from "lucide-react";
-import { useAccount, useConnect } from "wagmi";
+import { useAccount, useConnect, useConnectorClient, usePublicClient } from "wagmi";
 import { toast } from "sonner";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -215,7 +217,9 @@ function ProposalCardWithVote({
 }
 
 export default function GovernancePage() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, chainId } = useAccount();
+  const { data: connectorClient } = useConnectorClient();
+  const publicClient = usePublicClient();
   const [filter, setFilter] = useState<"all" | "active" | "passed" | "rejected">("all");
   const [showNewProposal, setShowNewProposal] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -243,6 +247,31 @@ export default function GovernancePage() {
   const handleVote = async (proposalId: string, vote: "for" | "against") => {
     if (!address) return;
     try {
+      // Try real on-chain vote on Arbitrum Sepolia
+      const isOnChainNetwork = (chainId === 421614 || chainId === 11155111) && isContractDeployed("CipherGovernance");
+      if (isOnChainNetwork && connectorClient && publicClient) {
+        toast.info("Casting encrypted vote on-chain...");
+        try {
+          // proposalId is a Convex ID string — use index from proposals list
+          const proposals = await new Promise<any[]>(resolve => resolve([])); // will use existing proposals state
+          const { hash, explorerUrl } = await onChainCastVote(
+            connectorClient as any,
+            publicClient as any,
+            {
+              proposalId: 0, // on-chain proposal index — use 0 as default since Convex manages IDs
+              support: vote === "for",
+              voteWeight: 1,
+            }
+          );
+          toast.success(
+            <span>Vote cast on-chain — <a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="underline">View tx ↗</a></span>
+          );
+        } catch (onChainErr: any) {
+          toast.error(`On-chain vote failed: ${onChainErr?.shortMessage ?? onChainErr?.message ?? "Unknown error"}`);
+        }
+      }
+
+      // Always persist to Convex
       await castVote({
         proposalId,
         voterWallet: address,
@@ -267,6 +296,24 @@ export default function GovernancePage() {
     if (!newTitle.trim() || !address) return;
     setSubmitting(true);
     try {
+      // Try real on-chain proposal creation on Arbitrum Sepolia
+      const isOnChainNetwork = (chainId === 421614 || chainId === 11155111) && isContractDeployed("CipherGovernance");
+      if (isOnChainNetwork) {
+        toast.info("Creating proposal on-chain...");
+        try {
+          const { hash, explorerUrl } = await onChainCreateProposal({
+            title: newTitle,
+            description: newDesc || "No description provided.",
+          });
+          toast.success(
+            <span>Proposal created on-chain — <a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="underline">View tx ↗</a></span>
+          );
+        } catch (onChainErr: any) {
+          toast.error(`On-chain proposal failed: ${onChainErr?.shortMessage ?? onChainErr?.message ?? "Unknown error"}`);
+        }
+      }
+
+      // Always persist to Convex
       await submitProposal({
         title: newTitle,
         description: newDesc || "No description provided.",

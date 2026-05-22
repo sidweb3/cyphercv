@@ -425,6 +425,15 @@ function HeroSection() {
         </motion.div>
       </nav>
 
+      {/* Background image overlay */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <img
+          src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1920&h=1080&fit=crop"
+          alt=""
+          className="w-full h-full object-cover opacity-[0.04] grayscale"
+        />
+      </div>
+
       {/* Hero content — two-column layout */}
       <div className="relative z-10 w-full max-w-7xl pt-24 md:pt-28">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -624,9 +633,8 @@ function HowItWorksSection() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={inView ? { opacity: 1, y: 0 } : {}}
                 transition={{ delay: i * 0.12 }}
-                className={`p-8 space-y-4 group hover:bg-secondary/20 transition-colors ${
-                  i % 2 === 0 ? "border-b md:border-r border-border" : "border-b border-border"
-                } ${i >= 2 ? "border-b-0" : ""}`}
+                className={`p-8 space-y-4 group hover:bg-secondary/20 transition-colors ${i % 2 === 0 ? "border-b md:border-r border-border" : "border-b border-border"
+                  } ${i >= 2 ? "border-b-0" : ""}`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -658,48 +666,9 @@ function FeaturesSection() {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
-  const features = [
-    {
-      icon: Ghost,
-      title: "Stealth Mode",
-      desc: "Block your current employer's domain. They cannot see your profile, your matches, or that you're searching. Enforced by FHE — not by trust.",
-      tag: "FHE Enforced",
-    },
-    {
-      icon: TrendingUp,
-      title: "Counter-Offer Calculator",
-      desc: "Compute your market value using encrypted salary data from matched candidates. Get a data-driven counter-offer without revealing your current salary.",
-      tag: "Privacy-Preserving",
-    },
-    {
-      icon: Calendar,
-      title: "Interview Insurance",
-      desc: "Guarantee a minimum number of interviews or get a refund. Backed by CipherEscrow — a smart contract that holds funds until conditions are met.",
-      tag: "Smart Contract",
-    },
-    {
-      icon: Shield,
-      title: "Blind Matching",
-      desc: "The matching algorithm runs entirely on encrypted data. Employers see a match score — not your identity, salary, or skills. You see a match — not their budget.",
-      tag: "Zero-Knowledge",
-    },
-    {
-      icon: Code2,
-      title: "SDK & API",
-      desc: "@cipher-cv/sdk — TypeScript SDK for building privacy-preserving hiring tools. 8 contracts, 24+ methods, full type safety.",
-      tag: "Wave 3",
-    },
-    {
-      icon: Activity,
-      title: "On-Chain Governance",
-      desc: "Protocol parameters are governed by token holders via CipherGovernance. All votes are encrypted — your governance participation is private.",
-      tag: "Encrypted Voting",
-    },
-  ];
-
   return (
     <section ref={ref} className="px-6 md:px-12 lg:px-20 py-24 border-b border-border">
-      <div className="max-w-7xl mx-auto space-y-16">
+      <div className="max-w-7xl mx-auto space-y-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -710,34 +679,176 @@ function FeaturesSection() {
           <p className="font-mono-cipher text-xs text-muted-foreground max-w-xl">Every feature is designed around one constraint: your current employer must never know.</p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0 border border-border">
-          {features.map((feature, i) => {
-            const Icon = feature.icon;
-            return (
-              <motion.div
-                key={feature.title}
-                initial={{ opacity: 0, y: 16 }}
-                animate={inView ? { opacity: 1, y: 0 } : {}}
-                transition={{ delay: i * 0.08 }}
-                className={`p-8 space-y-4 group hover:bg-secondary/20 transition-all duration-200 border-border ${
-                  i % 3 !== 2 ? "border-r" : ""
-                } ${i < 3 ? "border-b" : ""}`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="w-10 h-10 border border-border flex items-center justify-center group-hover:border-primary transition-colors">
-                    <Icon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                  </div>
-                  <span className="font-mono-cipher border border-border text-muted-foreground px-2 py-0.5 group-hover:border-primary/40 group-hover:text-primary transition-colors" style={{ fontSize: "9px" }}>
-                    {feature.tag}
-                  </span>
+        {/* Bento Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+
+          {/* Cell 1 — Stealth Mode — hero, 7 cols, tall */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={inView ? { opacity: 1, scale: 1 } : {}}
+            transition={{ delay: 0.05, duration: 0.5 }}
+            className="md:col-span-7 relative overflow-hidden border border-border group cursor-default"
+            style={{ minHeight: 420 }}
+          >
+            <img
+              src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200&q=90&fit=crop"
+              alt="Stealth Mode"
+              className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-65 group-hover:scale-105 transition-all duration-700"
+            />
+            {/* Orange tint overlay */}
+            <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(255,69,0,0.18) 0%, transparent 60%)" }} />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-transparent" />
+            <div className="relative h-full flex flex-col justify-end p-8 space-y-4" style={{ minHeight: 420 }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 border border-primary/50 flex items-center justify-center bg-primary/15">
+                  <Ghost className="w-5 h-5 text-primary" />
                 </div>
-                <div>
-                  <h3 className="font-display text-base text-foreground mb-2">{feature.title}</h3>
-                  <p className="font-mono-cipher text-xs text-muted-foreground leading-relaxed">{feature.desc}</p>
+                <span className="font-mono-cipher text-[9px] border border-primary/40 text-primary px-2.5 py-1 uppercase tracking-widest bg-primary/5">FHE Enforced</span>
+              </div>
+              <div>
+                <h3 className="font-display text-3xl text-foreground mb-2">Stealth Mode</h3>
+                <p className="font-mono-cipher text-xs text-muted-foreground leading-relaxed max-w-md">Block your current employer's domain. They cannot see your profile, your matches, or that you're searching. Enforced by FHE — not by trust.</p>
+              </div>
+              <div className="flex items-center gap-4 pt-1">
+                <div className="flex items-center gap-1.5">
+                  <motion.span className="w-1.5 h-1.5 bg-primary rounded-full" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.2, repeat: Infinity }} />
+                  <span className="font-mono-cipher text-[10px] text-primary/70">Active on Sepolia</span>
                 </div>
-              </motion.div>
-            );
-          })}
+                <span className="font-mono-cipher text-[10px] text-muted-foreground/50">|</span>
+                <span className="font-mono-cipher text-[10px] text-muted-foreground/60">CipherStealth.sol</span>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Cell 2 — Counter-Offer — 5 cols, tall */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={inView ? { opacity: 1, scale: 1 } : {}}
+            transition={{ delay: 0.12, duration: 0.5 }}
+            className="md:col-span-5 relative overflow-hidden border border-border group cursor-default"
+            style={{ minHeight: 420 }}
+          >
+            <img
+              src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&q=90&fit=crop"
+              alt="Counter-Offer Calculator"
+              className="absolute inset-0 w-full h-full object-cover opacity-45 group-hover:opacity-60 group-hover:scale-105 transition-all duration-700"
+            />
+            <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(0,180,255,0.12) 0%, transparent 60%)" }} />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+            <div className="relative h-full flex flex-col justify-end p-7 space-y-3" style={{ minHeight: 420 }}>
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 border border-border flex items-center justify-center bg-background/60">
+                  <TrendingUp className="w-4 h-4 text-primary" />
+                </div>
+                <span className="font-mono-cipher text-[9px] border border-border text-muted-foreground px-2 py-0.5 uppercase tracking-widest">Privacy-Preserving</span>
+              </div>
+              <div>
+                <h3 className="font-display text-xl text-foreground mb-1.5">Counter-Offer Calculator</h3>
+                <p className="font-mono-cipher text-xs text-muted-foreground leading-relaxed">Compute your market value using encrypted salary data from matched candidates. Get a data-driven counter-offer without revealing your current salary.</p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Row 2: 3 equal cells */}
+          {/* Cell 3 — Interview Insurance */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.18, duration: 0.5 }}
+            className="md:col-span-4 relative overflow-hidden border border-border group cursor-default"
+            style={{ minHeight: 260 }}
+          >
+            <img
+              src="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=700&q=90&fit=crop"
+              alt="Interview Insurance"
+              className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-58 group-hover:scale-105 transition-all duration-700"
+            />
+            <div className="absolute inset-0" style={{ background: "linear-gradient(160deg, rgba(255,140,0,0.15) 0%, transparent 55%)" }} />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/65 to-transparent" />
+            <div className="relative h-full flex flex-col justify-end p-6 space-y-2" style={{ minHeight: 260 }}>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-primary" />
+                <span className="font-mono-cipher text-[9px] border border-border text-muted-foreground px-2 py-0.5 uppercase tracking-widest">Smart Contract</span>
+              </div>
+              <h3 className="font-display text-lg text-foreground">Interview Insurance</h3>
+              <p className="font-mono-cipher text-xs text-muted-foreground leading-relaxed">Guarantee a minimum number of interviews or get a refund. Backed by CipherEscrow on-chain.</p>
+            </div>
+          </motion.div>
+
+          {/* Cell 4 — Blind Matching */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.24, duration: 0.5 }}
+            className="md:col-span-4 relative overflow-hidden border border-border group cursor-default"
+            style={{ minHeight: 260 }}
+          >
+            <img
+              src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=700&q=90&fit=crop"
+              alt="Blind Matching"
+              className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-58 group-hover:scale-105 transition-all duration-700"
+            />
+            <div className="absolute inset-0" style={{ background: "linear-gradient(160deg, rgba(0,255,150,0.08) 0%, transparent 55%)" }} />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/65 to-transparent" />
+            <div className="relative h-full flex flex-col justify-end p-6 space-y-2" style={{ minHeight: 260 }}>
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-primary" />
+                <span className="font-mono-cipher text-[9px] border border-border text-muted-foreground px-2 py-0.5 uppercase tracking-widest">Zero-Knowledge</span>
+              </div>
+              <h3 className="font-display text-lg text-foreground">Blind Matching</h3>
+              <p className="font-mono-cipher text-xs text-muted-foreground leading-relaxed">The algorithm runs on encrypted data. Employers see a score — not your identity, salary, or skills.</p>
+            </div>
+          </motion.div>
+
+          {/* Cell 5 — SDK + Governance stacked in 4 cols */}
+          <div className="md:col-span-4 flex flex-col gap-3">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="flex-1 relative overflow-hidden border border-border group cursor-default"
+              style={{ minHeight: 122 }}
+            >
+              <img
+                src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&q=90&fit=crop"
+                alt="SDK"
+                className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-58 group-hover:scale-105 transition-all duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
+              <div className="relative h-full flex flex-col justify-end p-5 space-y-1.5" style={{ minHeight: 122 }}>
+                <div className="flex items-center gap-2">
+                  <Code2 className="w-3.5 h-3.5 text-primary" />
+                  <span className="font-mono-cipher text-[9px] border border-border text-muted-foreground px-1.5 py-0.5 uppercase tracking-widest">Wave 3</span>
+                </div>
+                <h3 className="font-display text-base text-foreground">SDK & API</h3>
+                <p className="font-mono-cipher text-[10px] text-muted-foreground">8 contracts · 24+ methods · full type safety</p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ delay: 0.36, duration: 0.5 }}
+              className="flex-1 relative overflow-hidden border border-border group cursor-default"
+              style={{ minHeight: 122 }}
+            >
+              <img
+                src="https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=600&q=90&fit=crop"
+                alt="Governance"
+                className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-58 group-hover:scale-105 transition-all duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
+              <div className="relative h-full flex flex-col justify-end p-5 space-y-1.5" style={{ minHeight: 122 }}>
+                <div className="flex items-center gap-2">
+                  <Activity className="w-3.5 h-3.5 text-primary" />
+                  <span className="font-mono-cipher text-[9px] border border-border text-muted-foreground px-1.5 py-0.5 uppercase tracking-widest">Encrypted Voting</span>
+                </div>
+                <h3 className="font-display text-base text-foreground">On-Chain Governance</h3>
+                <p className="font-mono-cipher text-[10px] text-muted-foreground">Encrypted votes via CipherGovernance</p>
+              </div>
+            </motion.div>
+          </div>
+
         </div>
       </div>
     </section>
@@ -827,18 +938,21 @@ function TestimonialsSection() {
       role: "Senior Engineer → Staff Engineer",
       company: "FAANG → Startup",
       raise: "+34%",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&h=64&fit=crop&crop=face",
     },
     {
       quote: "The counter-offer calculator showed me I was 28% below market. I used that data to negotiate. My employer matched it without knowing I had offers.",
       role: "Engineering Manager",
       company: "Series B → Series D",
       raise: "+28%",
+      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=64&h=64&fit=crop&crop=face",
     },
     {
       quote: "I was skeptical about the privacy claims. Then I read the whitepaper and verified the contracts on Arbiscan. The math checks out. This is real.",
       role: "Cryptography Engineer",
       company: "Protocol Labs",
       raise: "+41%",
+      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=64&h=64&fit=crop&crop=face",
     },
   ];
 
@@ -866,19 +980,103 @@ function TestimonialsSection() {
             >
               <Quote className="w-5 h-5 text-primary/40" />
               <p className="font-mono-cipher text-xs text-muted-foreground leading-relaxed">{t.quote}</p>
-              <div className="space-y-2 pt-2 border-t border-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-mono-cipher text-xs text-foreground">{t.role}</div>
-                    <div className="font-mono-cipher text-muted-foreground" style={{ fontSize: "10px" }}>{t.company}</div>
+              <div className="space-y-3 pt-2 border-t border-border">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 border border-border overflow-hidden shrink-0">
+                    <img
+                      src={t.avatar}
+                      alt={t.role}
+                      className="w-full h-full object-cover grayscale opacity-70"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
                   </div>
-                  <div className="font-display text-lg text-primary">{t.raise}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-mono-cipher text-xs text-foreground truncate">{t.role}</div>
+                    <div className="font-mono-cipher text-muted-foreground truncate" style={{ fontSize: "10px" }}>{t.company}</div>
+                  </div>
+                  <div className="font-display text-lg text-primary shrink-0">{t.raise}</div>
                 </div>
                 <div className="flex gap-1">
                   {[...Array(5)].map((_, j) => (
                     <Star key={j} className="w-3 h-3 text-primary fill-primary" />
                   ))}
                 </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Who It's For Section ─────────────────────────────────────────────────────
+function WhoItsForSection() {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+
+  const personas = [
+    {
+      title: "The Quietly Ambitious",
+      desc: "You're performing well at your current job. You're not desperate. But you're curious what the market looks like — without triggering a performance review.",
+      image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=300&fit=crop",
+      tags: ["Stealth Mode", "Employer Blocklist"],
+    },
+    {
+      title: "The Underpaid Expert",
+      desc: "You know you're worth more. You just don't have the data to prove it. Cipher CV's counter-offer calculator gives you encrypted market data to negotiate with.",
+      image: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=400&h=300&fit=crop",
+      tags: ["Counter-Offer Calculator", "Market Data"],
+    },
+    {
+      title: "The Privacy-First Engineer",
+      desc: "You've read the FHE papers. You know what's possible. You want to use a platform that actually implements the cryptography — not just claims to.",
+      image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&h=300&fit=crop",
+      tags: ["FHE Verified", "On-Chain Proofs"],
+    },
+  ];
+
+  return (
+    <section ref={ref} className="px-6 md:px-12 lg:px-20 py-24 border-b border-border">
+      <div className="max-w-7xl mx-auto space-y-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          className="space-y-2"
+        >
+          <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Who It's For</div>
+          <h2 className="font-display text-3xl md:text-4xl text-foreground">Built for people who can't afford to be seen looking.</h2>
+          <p className="font-mono-cipher text-xs text-muted-foreground max-w-xl">If you're currently employed and exploring, this was built for you.</p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-border">
+          {personas.map((p, i) => (
+            <motion.div
+              key={p.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ delay: i * 0.12 }}
+              className={`group ${i < 2 ? "border-b md:border-b-0 md:border-r border-border" : ""}`}
+            >
+              <div className="relative overflow-hidden h-48">
+                <img
+                  src={p.image}
+                  alt={p.title}
+                  className="w-full h-full object-cover grayscale opacity-50 group-hover:opacity-70 group-hover:scale-105 transition-all duration-500"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-card via-card/60 to-transparent" />
+                <div className="absolute bottom-4 left-6 flex flex-wrap gap-1.5">
+                  {p.tags.map(tag => (
+                    <span key={tag} className="font-mono-cipher border border-primary/40 text-primary bg-card/80 px-2 py-0.5" style={{ fontSize: "9px" }}>
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="p-6 space-y-3">
+                <h3 className="font-display text-base text-foreground">{p.title}</h3>
+                <p className="font-mono-cipher text-xs text-muted-foreground leading-relaxed">{p.desc}</p>
               </div>
             </motion.div>
           ))}
@@ -954,15 +1152,24 @@ function TechnicalSection() {
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
   const contracts = [
-    { name: "CipherCV", addr: "0xe9B8...B659", desc: "Core matching contract" },
-    { name: "CipherVault", addr: "0xeff0...A361", desc: "Credential storage" },
-    { name: "CipherGovernance", addr: "0x6D4b...3707", desc: "Encrypted voting" },
-    { name: "CipherEscrow", addr: "0x2d3f...8A6", desc: "Interview insurance" },
-    { name: "CipherCounterOffer", addr: "0xac95...A13d", desc: "Salary negotiation" },
-    { name: "CipherStealth", addr: "0xE4cC...B91", desc: "Employer blocklist" },
-    { name: "CipherBatchMatcher", addr: "0xB89B...D3b", desc: "Batch tournament" },
-    { name: "CipherRegistry", addr: "0x92D5...B79", desc: "Protocol registry" },
+    { name: "CipherCV", full: "0xe9B8e9bC8D447a1FE7746d3b870491226f8cB659", short: "0xe9B8...B659", desc: "Core matching contract", page: "/app/candidate" },
+    { name: "CipherVault", full: "0xeff0835318a9e6812150519321B3097Db685A361", short: "0xeff0...A361", desc: "Credential storage", page: "/app/vault" },
+    { name: "CipherGovernance", full: "0x6D4b9e6C8946f7bc4bBCee81f7E4b31f97F53707", short: "0x6D4b...3707", desc: "Encrypted voting", page: "/app/governance" },
+    { name: "CipherEscrow", full: "0x2d3f35e6EC323ad66E288a8F32765bde35cf68A6", short: "0x2d3f...68A6", desc: "Interview insurance", page: "/app/candidate" },
+    { name: "CipherCounterOffer", full: "0xac95Fd56a9a18A5424370528a40035F47277A13d", short: "0xac95...A13d", desc: "Salary negotiation", page: "/app/matches" },
+    { name: "CipherStealth", full: "0xE4cCE042F239F02E5ce2F7aCFcd595Cbf988DB91", short: "0xE4cC...B91", desc: "Employer blocklist", page: "/app/candidate" },
+    { name: "CipherBatchMatcher", full: "0xB89B8a766EFF04ABFa7781effeC8c5DA81801D3b", short: "0xB89B...D3b", desc: "Batch tournament", page: "/app/matches" },
+    { name: "CipherRegistry", full: "0x92D5322caD60e583ca4502c08Bf9E75DcAd5CB79", short: "0x92D5...B79", desc: "Protocol registry", page: "/app/protocol" },
   ];
+
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const copyAddr = (addr: string) => {
+    navigator.clipboard.writeText(addr).then(() => {
+      setCopied(addr);
+      setTimeout(() => setCopied(null), 1500);
+    });
+  };
 
   return (
     <section ref={ref} className="px-6 md:px-12 lg:px-20 py-24 border-b border-border">
@@ -976,10 +1183,22 @@ function TechnicalSection() {
             <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Architecture</div>
             <h2 className="font-display text-3xl md:text-4xl text-foreground">8 contracts. 1 protocol.</h2>
             <p className="font-mono-cipher text-xs text-muted-foreground leading-relaxed">
-              Cipher CV is a suite of 8 smart contracts deployed on Arbitrum Sepolia. Each contract handles a specific privacy primitive — from blind matching to encrypted governance.
+              Cipher CV is a suite of 8 smart contracts deployed on Ethereum Sepolia. Each contract handles a specific privacy primitive — from blind matching to encrypted governance.
             </p>
+            <div className="relative overflow-hidden h-40 border border-border">
+              <img
+                src="https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=800&h=320&fit=crop"
+                alt="Blockchain network"
+                className="w-full h-full object-cover grayscale opacity-30"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-card via-transparent to-card" />
+              <div className="absolute inset-0 flex items-center justify-center gap-3">
+                <motion.div className="w-1.5 h-1.5 bg-primary rounded-full" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.2, repeat: Infinity }} />
+                <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Ethereum Sepolia — 8 Contracts Live</div>
+              </div>
+            </div>
             <div className="flex flex-wrap gap-2 pt-2">
-              {["CoFHE SDK", "decryptForView", "decryptForTx", "FHE.publishDecryptResult", "Arbitrum Sepolia"].map(tag => (
+              {["CoFHE SDK", "decryptForView", "decryptForTx", "FHE.publishDecryptResult", "Ethereum Sepolia"].map(tag => (
                 <span key={tag} className="font-mono-cipher text-xs border border-border text-muted-foreground px-2 py-1">{tag}</span>
               ))}
             </div>
@@ -990,6 +1209,14 @@ function TechnicalSection() {
               <Link to="/app/whitepaper" className="font-mono-cipher text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
                 Whitepaper <ArrowRight className="w-3 h-3" />
               </Link>
+              <a
+                href="https://sepolia.etherscan.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono-cipher text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+              >
+                Etherscan <ExternalLink className="w-3 h-3" />
+              </a>
             </div>
           </div>
 
@@ -1000,19 +1227,26 @@ function TechnicalSection() {
                 initial={{ opacity: 0, x: 10 }}
                 animate={inView ? { opacity: 1, x: 0 } : {}}
                 transition={{ delay: i * 0.06 }}
-                className={`flex items-center justify-between px-5 py-3 hover:bg-secondary/20 transition-colors ${i < contracts.length - 1 ? "border-b border-border" : ""}`}
+                className={`flex items-center justify-between px-5 py-3 hover:bg-secondary/20 transition-colors group ${i < contracts.length - 1 ? "border-b border-border" : ""}`}
               >
-                <div>
-                  <div className="font-mono-cipher text-xs text-foreground">{c.name}</div>
+                <div className="min-w-0 flex-1">
+                  <Link to={c.page} className="font-mono-cipher text-xs text-foreground hover:text-primary transition-colors">{c.name}</Link>
                   <div className="font-mono-cipher text-muted-foreground" style={{ fontSize: "10px" }}>{c.desc}</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono-cipher text-xs text-primary/70">{c.addr}</span>
+                <div className="flex items-center gap-2 shrink-0 ml-3">
+                  <button
+                    onClick={() => copyAddr(c.full)}
+                    title="Copy address"
+                    className="font-mono-cipher text-xs text-primary/70 hover:text-primary transition-colors cursor-pointer"
+                  >
+                    {copied === c.full ? "Copied!" : c.short}
+                  </button>
                   <a
-                    href={`https://sepolia.arbiscan.io/address/${c.addr}`}
+                    href={`https://sepolia.etherscan.io/address/${c.full}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-muted-foreground hover:text-primary transition-colors"
+                    title="View on Etherscan"
                   >
                     <ExternalLink className="w-3 h-3" />
                   </a>
@@ -1149,6 +1383,7 @@ export default function Landing() {
         <FeaturesSection />
         <ComparisonSection />
         <TestimonialsSection />
+        <WhoItsForSection />
         <DemoSection />
         <TechnicalSection />
         <CTASection />

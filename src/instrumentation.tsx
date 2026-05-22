@@ -169,46 +169,8 @@ function ErrorDialog({
   error: GenericError;
   setError: (error: GenericError | null) => void;
 }) {
-  return (
-    <Dialog
-      defaultOpen={true}
-      onOpenChange={() => {
-        setError(null);
-      }}
-    >
-      <DialogContent className="bg-red-700 text-white max-w-4xl">
-        <DialogHeader>
-          <DialogTitle>Runtime Error</DialogTitle>
-        </DialogHeader>
-        A runtime error occurred. Open the vly editor to automatically debug the
-        error.
-        <div className="mt-4">
-          <Collapsible>
-            <CollapsibleTrigger>
-              <div className="flex items-center font-bold cursor-pointer">
-                See error details <ChevronDown />
-              </div>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="max-w-[460px]">
-              <div className="mt-2 p-3 bg-neutral-800 rounded text-white text-sm overflow-x-auto max-h-60 max-w-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                <pre className="whitespace-pre">{error.stack}</pre>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
-        <DialogFooter>
-          <a
-            href={`https://vly.ai/project/${import.meta.env.VITE_VLY_APP_ID}`}
-            target="_blank"
-          >
-            <Button>
-              <ExternalLink /> Open editor
-            </Button>
-          </a>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
+  // Silently dismiss — do not show error UI to users
+  return null;
 }
 
 type ErrorBoundaryState = {
