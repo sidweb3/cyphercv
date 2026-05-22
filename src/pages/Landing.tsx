@@ -818,7 +818,7 @@ function FeaturesSection() {
               <div className="relative h-full flex flex-col justify-end p-5 space-y-1.5" style={{ minHeight: 122 }}>
                 <div className="flex items-center gap-2">
                   <Code2 className="w-3.5 h-3.5 text-primary" />
-                  <span className="font-mono-cipher text-[9px] border border-border text-muted-foreground px-1.5 py-0.5 uppercase tracking-widest">Wave 3</span>
+                  <span className="font-mono-cipher text-[9px] border border-border text-muted-foreground px-1.5 py-0.5 uppercase tracking-widest">ALL Contracts Live</span>
                 </div>
                 <h3 className="font-display text-base text-foreground">SDK & API</h3>
                 <p className="font-mono-cipher text-[10px] text-muted-foreground">8 contracts · 24+ methods · full type safety</p>
