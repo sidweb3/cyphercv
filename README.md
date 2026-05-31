@@ -1,6 +1,7 @@
-# Cipher CV — Encrypted Labor Matching Protocol
+# Cipher CV
 
-> Privacy-by-design job matching powered by Fully Homomorphic Encryption via CoFHE.
+> **The first FHE-powered job search protocol.**  
+> Your salary, skills, and identity stay encrypted throughout the entire matching process — from submission to reveal.
 
 ---
 

@@ -57,35 +57,35 @@ const ARCHITECTURE_LAYERS = [
     name: "Client Layer",
     tech: "React + CoFHE SDK",
     desc: "Encrypts all sensitive inputs client-side using Fhenix's CoFHE SDK before any network transmission. Zero plaintext leaves the browser.",
-    status: "Wave 2 — Live",
+    status: "Live",
   },
   {
     layer: "02",
     name: "Protocol Layer",
     tech: "Fhenix fhEVM",
     desc: "Fully Homomorphic Encryption virtual machine. Executes arithmetic and comparison operations on encrypted integers without decryption.",
-    status: "Wave 2 — Live",
+    status: "Live",
   },
   {
     layer: "03",
     name: "Storage Layer",
     tech: "Encrypted State",
     desc: "All on-chain state stored as euint32 types. Salary ranges, experience, and skill vectors are never stored in plaintext.",
-    status: "Wave 2 — Live",
+    status: "Live",
   },
   {
     layer: "04",
     name: "Matching Layer",
     tech: "FHE.gte / FHE.and",
     desc: "Blind comparison operators compute salary overlap and experience matching without revealing either party's constraints.",
-    status: "Wave 2 — Live",
+    status: "Live",
   },
   {
     layer: "05",
     name: "Reveal Layer",
     tech: "Mutual Consent Decrypt",
     desc: "Salary figures are decrypted only upon mutual consent from both parties. Rejection reveals zero information.",
-    status: "Wave 2 — Live",
+    status: "Live",
   },
 ];
 
@@ -95,56 +95,56 @@ const CONTRACT_SUITE = [
     file: "CipherRegistry.sol",
     desc: "Protocol address registry. Single source of truth for all deployed contract addresses. Supports upgrades, pausing, and admin transfer.",
     envVar: "VITE_CIPHER_REGISTRY_CONTRACT",
-    wave: "Wave 2",
+    wave: "v1.0",
   },
   {
     name: "CipherCV",
     file: "CipherCV.sol",
     desc: "Core FHE matching engine. Candidates and employers submit encrypted profiles. Compatibility computed on ciphertext via FHE.gte() and FHE.and().",
     envVar: "VITE_CIPHER_CV_CONTRACT",
-    wave: "Wave 2",
+    wave: "v1.0",
   },
   {
     name: "CipherVault",
     file: "CipherVault.sol",
     desc: "Encrypted credential vault. Multi-credential storage with versioning, revocation, sealed output, and access logging.",
     envVar: "VITE_CIPHER_VAULT_CONTRACT",
-    wave: "Wave 2",
+    wave: "v1.0",
   },
   {
     name: "CipherGovernance",
     file: "CipherGovernance.sol",
     desc: "On-chain governance with encrypted vote weights. Proposals, encrypted tallying, quorum enforcement, timelock, and parameter execution.",
     envVar: "VITE_CIPHER_GOVERNANCE_CONTRACT",
-    wave: "Wave 2",
+    wave: "v1.0",
   },
   {
     name: "CipherEscrow",
     file: "CipherEscrow.sol",
     desc: "Interview Insurance escrow. ETH premium with FHE-gated release. Auto-refund if interview target not met. Protocol fee on completion.",
     envVar: "VITE_CIPHER_ESCROW_CONTRACT",
-    wave: "Wave 2",
+    wave: "v1.0",
   },
   {
     name: "CipherCounterOffer",
     file: "CipherCounterOffer.sol",
     desc: "Counter-offer calculator. Encrypted salary vs market benchmarks. Leverage score computation. Sealed output for private viewing.",
     envVar: "VITE_CIPHER_COUNTER_OFFER_CONTRACT",
-    wave: "Wave 2",
+    wave: "v1.0",
   },
   {
     name: "CipherStealth",
     file: "CipherStealth.sol",
     desc: "Stealth mode employer blocklist. Encrypted blocklist/allowlist. Time-locked profiles. Domain-level blocking. Full stealth mode.",
     envVar: "VITE_CIPHER_STEALTH_CONTRACT",
-    wave: "Wave 2",
+    wave: "v1.0",
   },
   {
     name: "CipherBatchMatcher",
     file: "CipherBatchMatcher.sol",
     desc: "Batch tournament matching. Up to 50 candidate × employer pairs per transaction. Tournament mode for N×M matching. Gas-optimized.",
     envVar: "VITE_CIPHER_BATCH_MATCHER_CONTRACT",
-    wave: "Wave 2",
+    wave: "v1.0",
   },
 ];
 
@@ -208,7 +208,7 @@ export default function ProtocolPage() {
         {/* Status banner */}
         <div className="border border-primary p-4 flex items-center justify-between flex-wrap gap-3">
           <div className="font-mono-cipher text-xs text-primary">
-            ▋ Wave 3 Active — 8 Contracts Live on Arbitrum Sepolia
+            ▋ Protocol Live — 8 Contracts Deployed on Arbitrum Sepolia
           </div>
           <div className="font-mono-cipher text-xs text-muted-foreground">
             Convex backend live · Arbitrum Sepolia (Chain ID: 421614) · Mainnet deployment in progress

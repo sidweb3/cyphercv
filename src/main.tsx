@@ -32,6 +32,7 @@ const GovernancePage = lazy(() => import("./pages/app/GovernancePage.tsx"));
 const DownloadPage = lazy(() => import("./pages/DownloadPage.tsx"));
 const DeploymentGuide = lazy(() => import("./pages/DeploymentGuide.tsx"));
 const SDKPage = lazy(() => import("./pages/app/SDKPage.tsx"));
+const ConnectPage = lazy(() => import("./pages/ConnectPage.tsx"));
 
 function RouteLoading() {
   return (
@@ -86,6 +87,7 @@ createRoot(document.getElementById("root")!).render(
                 <Suspense fallback={<RouteLoading />}>
                   <Routes>
                     <Route path="/" element={<Landing />} />
+                    <Route path="/connect" element={<ConnectPage />} />
                     <Route path="/auth" element={<AuthPage redirectAfterAuth="/" />} />
                     <Route path="/app" element={<DashboardPage />} />
                     <Route path="/app/candidate" element={<CandidatePage />} />

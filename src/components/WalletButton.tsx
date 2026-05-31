@@ -4,21 +4,16 @@ import { useEffect } from 'react';
 
 export function WalletButton() {
   const { address, isConnected } = useAccount();
-  const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
-
-  const handleConnect = () => {
-    const injectedConnector = connectors.find(c => c.id === 'injected') || connectors[0];
-    if (injectedConnector) connect({ connector: injectedConnector });
-  };
+  const navigate = useNavigate();
 
   if (!isConnected) {
     return (
       <button
-        onClick={handleConnect}
+        onClick={() => navigate('/connect')}
         className="font-mono-cipher text-xs bg-primary text-primary-foreground px-4 py-2 uppercase tracking-widest hover:bg-foreground hover:text-background transition-all duration-100 border border-primary"
       >
-        Connect Wallet
+        Launch App
       </button>
     );
   }
@@ -36,7 +31,6 @@ export function WalletButton() {
 
 export function EncryptProfileButton() {
   const { isConnected } = useAccount();
-  const { connect, connectors } = useConnect();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,15 +39,10 @@ export function EncryptProfileButton() {
     }
   }, [isConnected, navigate]);
 
-  const handleConnect = () => {
-    const injectedConnector = connectors.find(c => c.id === 'injected') || connectors[0];
-    if (injectedConnector) connect({ connector: injectedConnector });
-  };
-
   if (!isConnected) {
     return (
       <button
-        onClick={handleConnect}
+        onClick={() => navigate('/connect')}
         className="font-mono-cipher text-xs bg-primary text-primary-foreground px-6 py-3 uppercase tracking-widest hover:bg-foreground hover:text-background transition-all duration-100"
       >
         Connect Wallet to Encrypt Profile →

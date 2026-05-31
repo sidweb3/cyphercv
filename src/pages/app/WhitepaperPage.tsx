@@ -178,7 +178,7 @@ export default function WhitepaperPage() {
         <aside className="hidden lg:flex flex-col w-56 shrink-0 border-r border-border bg-card sticky top-0 h-screen overflow-y-auto">
           <div className="px-4 py-5 border-b border-border">
             <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Whitepaper</div>
-            <div className="font-mono-cipher text-xs text-muted-foreground mt-1">v3.0 — Wave 3</div>
+            <div className="font-mono-cipher text-xs text-muted-foreground mt-1">Production — Live</div>
           </div>
           <nav className="py-4 px-2 space-y-0.5">
             {TOC.map((item) => (
@@ -198,7 +198,7 @@ export default function WhitepaperPage() {
           <div className="mt-auto p-4 border-t border-border">
             <div className="font-mono-cipher text-xs text-muted-foreground">
               Cipher CV Protocol<br />
-              Fhenix Buildathon 2025
+              Fhenix Privacy-by-Design
             </div>
           </div>
         </aside>
@@ -208,7 +208,7 @@ export default function WhitepaperPage() {
           {/* Header */}
           <div className="pb-12 space-y-4">
             <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">
-              Technical Whitepaper — v3.0
+              Technical Whitepaper — Production
             </div>
             <h1 className="text-3xl md:text-5xl font-bold text-foreground leading-tight" style={{ fontFamily: "Space Grotesk" }}>
               Cipher CV:<br />
@@ -218,11 +218,12 @@ export default function WhitepaperPage() {
             <div className="font-mono-cipher text-xs text-muted-foreground space-y-1">
               <div>Authors: Cipher CV Core Team</div>
               <div>Date: {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long" })}</div>
-              <div>Network: Ethereum Sepolia Testnet (Chain ID: 11155111)</div>
-              <div>Status: Wave 3 — Mainnet Deployment · DAO Governance · Public SDK</div>
+              <div>Primary Network: Arbitrum Sepolia (Chain ID: 421614)</div>
+              <div>Also Deployed: Ethereum Sepolia (Chain ID: 11155111)</div>
+              <div>Status: Live — 8 Contracts Deployed · Convex Backend Active · SDK Available</div>
             </div>
             <div className="flex flex-wrap gap-2 pt-2">
-              {["FHE", "Privacy", "Labor Markets", "Fhenix", "fhEVM", "Encrypted Matching"].map(tag => (
+              {["FHE", "Privacy", "Labor Markets", "Fhenix", "fhEVM", "Encrypted Matching", "Arbitrum", "CoFHE"].map(tag => (
                 <span key={tag} className="font-mono-cipher text-xs border border-border px-2 py-1 text-muted-foreground">
                   {tag}
                 </span>
@@ -239,7 +240,7 @@ export default function WhitepaperPage() {
               Traditional hiring markets suffer from a fundamental information asymmetry: candidates must reveal salary history and expectations before knowing whether a role is financially viable, while employers broadcast budget ranges that anchor negotiations against candidates. This creates a market where the party with less information — typically the candidate — is systematically disadvantaged.
             </Para>
             <Para>
-              Cipher CV resolves this by moving all sensitive computation on-chain using FHE operators. Salary ranges, experience levels, and skill vectors are encrypted client-side and submitted as ciphertext. The Fhenix fhEVM computes the intersection of these encrypted sets and returns an encrypted boolean — match or no match — without ever decrypting the inputs.
+              Cipher CV resolves this by moving all sensitive computation on-chain using FHE operators. Salary ranges, experience levels, and skill vectors are encrypted client-side using the @cofhe/sdk and submitted as ciphertext. The Fhenix fhEVM computes the intersection of these encrypted sets and returns an encrypted boolean — match or no match — without ever decrypting the inputs. Eight smart contracts are live on Arbitrum Sepolia, with a Convex real-time backend handling off-chain state, notifications, and match coordination.
             </Para>
           </Section>
 
@@ -283,6 +284,8 @@ export default function WhitepaperPage() {
                 { prop: "Mutual Consent Reveal", desc: "Salary figures are decrypted only when both parties explicitly consent. Neither can unilaterally reveal the other's data." },
                 { prop: "Identity Separation", desc: "Candidate identity is decoupled from the matching process. Employers evaluate encrypted profiles, not names or photos." },
                 { prop: "Cryptographic Enforcement", desc: "Privacy guarantees are enforced by mathematics, not policy. No administrator can override them." },
+                { prop: "Stealth Mode", desc: "Candidates can add their current employer's domain to an encrypted blocklist. The employer is mathematically invisible to the search." },
+                { prop: "Counter-Offer Privacy", desc: "Market benchmarks and leverage scores are computed on encrypted data via FHE.select() and returned as sealed output." },
               ].map((item, i) => (
                 <div key={item.prop} className="flex gap-4 items-start">
                   <span className="font-mono-cipher text-xs text-primary mt-0.5 shrink-0">—</span>
@@ -306,18 +309,21 @@ export default function WhitepaperPage() {
               The comparison is performed entirely on ciphertext. Neither value is ever decrypted during computation. The result is an encrypted boolean that can only be decrypted by the authorized party.
             </Callout>
             <Para>
-              Fhenix implements FHE on an EVM-compatible blockchain, exposing FHE operations as Solidity primitives. This allows smart contracts to perform encrypted arithmetic and comparison operations natively, without requiring off-chain computation or trusted execution environments.
+              Fhenix implements FHE on an EVM-compatible blockchain, exposing FHE operations as Solidity primitives. This allows smart contracts to perform encrypted arithmetic and comparison operations natively, without requiring off-chain computation or trusted execution environments. The @cofhe/sdk (CoFHE) handles client-side encryption, with the Threshold Network providing decryption services.
             </Para>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-border">
               {[
-                { op: "FHE.add(a, b)", desc: "Homomorphic addition of two encrypted integers. Used for computing salary midpoints." },
+                { op: "FHE.add(a, b)", desc: "Homomorphic addition of two encrypted integers. Used for computing salary midpoints and aggregate statistics." },
                 { op: "FHE.gte(a, b)", desc: "Encrypted greater-than-or-equal comparison. Core operator for salary overlap detection." },
                 { op: "FHE.and(a, b)", desc: "Logical AND on encrypted booleans. Combines salary and experience match signals." },
-                { op: "FHE.asEuint256(x)", desc: "Converts an inEuint256 input (submitted by client) to an on-chain encrypted integer." },
-                { op: "decryptForView / decryptForTx", desc: "FHE.decrypt() deprecated (Apr 2026). Use decryptForView for UI display or decryptForTx to get a Threshold Network signature for FHE.publishDecryptResult() on-chain." },
-                { op: "FHE.div(a, b)", desc: "Homomorphic division. Used to compute the encrypted salary midpoint for mutual reveal." },
+                { op: "FHE.asEuint32(x)", desc: "Converts an inEuint32 input (submitted by client via @cofhe/sdk) to an on-chain encrypted integer." },
+                { op: "FHE.select(cond, a, b)", desc: "Encrypted conditional (ternary). Used in CipherCounterOffer to compute leverage scores without branching on plaintext." },
+                { op: "FHE.sealoutput(x, pk)", desc: "Re-encrypts a ciphertext for a specific public key. Used in CipherVault and CipherCounterOffer for private sealed viewing." },
+                { op: "decryptForView()", desc: "@cofhe/sdk method for UI display. Returns plaintext to the authorized viewer without publishing on-chain." },
+                { op: "decryptForTx()", desc: "@cofhe/sdk method that returns a Threshold Network signature for FHE.publishDecryptResult() on-chain." },
+                { op: "FHE.publishDecryptResult()", desc: "On-chain method to publish a decrypted value with Threshold Network signature. Used in mutual consent reveal." },
               ].map((item, i) => (
-                <div key={item.op} className={`p-4 space-y-2 ${i % 3 !== 2 ? "border-b md:border-b-0 md:border-r border-border" : ""} ${i < 3 ? "border-b border-border" : ""}`}>
+                <div key={item.op} className={`p-4 space-y-2 ${i % 3 !== 2 ? "border-b md:border-b-0 md:border-r border-border" : ""} ${i < 6 ? "border-b border-border" : ""}`}>
                   <div className="font-mono-cipher text-xs text-primary">{item.op}</div>
                   <div className="font-mono-cipher text-xs text-muted-foreground leading-relaxed">{item.desc}</div>
                 </div>
@@ -336,116 +342,101 @@ export default function WhitepaperPage() {
                   phase: "01",
                   name: "Profile Encryption",
                   actor: "Candidate / Employer",
-                  desc: "The client-side @cofhe/sdk (successor to cofhejs) encrypts all sensitive inputs — salary range, experience, skill vectors — before any network transmission using encryptInputs([...]).execute(). The encrypted values are submitted to the Fhenix smart contract as inEuint256 types.",
-                  guarantee: "No plaintext leaves the browser.",
+                  desc: "The client-side @cofhe/sdk encrypts all sensitive inputs — salary range, experience, skill vectors — before any network transmission. The encrypted values (inEuint32) are submitted to the Fhenix blockchain. Plaintext never leaves the browser.",
                 },
                 {
                   phase: "02",
-                  name: "On-Chain Commitment",
-                  actor: "Fhenix fhEVM",
-                  desc: "Encrypted profiles are stored on-chain as euint256 state variables. The contract address and transaction hash serve as a cryptographic commitment to the submitted values without revealing them.",
-                  guarantee: "Immutable, verifiable commitment without disclosure.",
+                  name: "On-Chain Storage",
+                  actor: "CipherCV Contract",
+                  desc: "The CipherCV contract receives inEuint32 inputs and converts them to euint32 via FHE.asEuint32(). These encrypted values are stored in on-chain mappings. No plaintext is ever stored — only ciphertext.",
                 },
                 {
                   phase: "03",
                   name: "Blind Matching",
-                  actor: "Smart Contract",
-                  desc: "The matching function computes FHE.gte and FHE.and operations on the encrypted profiles. The result is an encrypted boolean stored on-chain. Neither party can read the result until they are authorized to decrypt it.",
-                  guarantee: "Match computed without decrypting inputs.",
+                  actor: "CipherCV Contract",
+                  desc: "computeMatch() runs FHE.gte() and FHE.and() on the encrypted inputs. The result is an ebool — an encrypted boolean. Neither party's salary range or experience level is revealed. The match result is stored as ciphertext.",
                 },
                 {
                   phase: "04",
-                  name: "Result Notification",
-                  actor: "Protocol",
-                  desc: "Both parties receive a notification that a match result exists. The notification contains no information about the match score or salary — only that a result is available for authorized decryption.",
-                  guarantee: "Existence of result revealed; content remains encrypted.",
+                  name: "Consent Signing",
+                  actor: "Candidate + Employer",
+                  desc: "Both parties must sign a consent transaction to initiate reveal. candidateConsent() and employerConsent() are called separately. Neither party can unilaterally reveal the other's data.",
                 },
                 {
                   phase: "05",
-                  name: "Mutual Consent Reveal",
-                  actor: "Both Parties",
-                  desc: "Both parties must sign a consent transaction to decrypt the match result. The decrypted output contains only the suggested salary midpoint — not the full range of either party. Identity is revealed only if both parties explicitly consent to a second reveal.",
-                  guarantee: "Salary revealed only with bilateral consent.",
+                  name: "Salary Reveal",
+                  actor: "Threshold Network + Both Parties",
+                  desc: "Upon mutual consent, the client calls decryptForTx() to obtain a Threshold Network signature. FHE.publishDecryptResult() is called on-chain with the decrypted value and signature. The suggested salary midpoint is revealed — and nothing else.",
                 },
               ].map((phase, i) => (
-                <div key={phase.phase} className={`p-6 grid grid-cols-1 md:grid-cols-4 gap-4 ${i < 4 ? "border-b border-border" : ""}`}>
+                <div key={phase.phase} className={`grid grid-cols-1 md:grid-cols-4 gap-4 p-6 ${i < 4 ? "border-b border-border" : ""}`}>
                   <div className="flex items-start gap-3">
                     <span className="font-mono-cipher text-2xl font-bold text-muted-foreground opacity-20">{phase.phase}</span>
                     <div>
-                      <div className="font-bold text-sm text-foreground" style={{ fontFamily: "Space Grotesk" }}>{phase.name}</div>
+                      <div className="font-bold text-foreground text-sm" style={{ fontFamily: "Space Grotesk" }}>{phase.name}</div>
                       <div className="font-mono-cipher text-xs text-primary mt-0.5">{phase.actor}</div>
                     </div>
                   </div>
-                  <div className="md:col-span-2 font-mono-cipher text-xs text-muted-foreground leading-relaxed">{phase.desc}</div>
-                  <div className="font-mono-cipher text-xs text-muted-foreground border border-border p-2 h-fit">
-                    <span className="text-primary">✓ </span>{phase.guarantee}
-                  </div>
+                  <div className="md:col-span-3 font-mono-cipher text-xs text-muted-foreground leading-relaxed">{phase.desc}</div>
                 </div>
               ))}
             </div>
           </Section>
 
           {/* Matching Algorithm */}
-          <Section id="matching" title="5. The Matching Algorithm" tag="§ 05">
+          <Section id="matching" title="5. Matching Algorithm" tag="§ 05">
             <Para>
-              The core matching algorithm computes salary overlap and experience compatibility using FHE comparison operators. The algorithm is designed to be minimal — it reveals only whether a match exists, not the degree of overlap or the distance between the parties' positions.
+              The core matching algorithm is implemented in CipherCV.sol. It takes encrypted salary ranges and experience levels from both parties and computes compatibility using FHE operators. The algorithm is deterministic, non-interactive, and produces no side-channel information.
             </Para>
-            <CodeBlock code={MATCH_ALGO} label="CipherCV.sol — matchingAlgorithm()" />
+            <CodeBlock code={MATCH_ALGO} label="CipherCV.sol — computeMatch()" />
             <Para>
-              The salary overlap condition requires that the employer's budget falls within the candidate's acceptable range — not merely that it exceeds the minimum. This prevents employers from using a high budget to match with candidates who would accept significantly less, preserving the candidate's negotiating position.
+              The algorithm has three key properties. First, it is symmetric: the same computation is performed regardless of which party initiates the match. Second, it is non-interactive: neither party needs to be online during computation. Third, it is zero-knowledge: a rejection reveals no information about the magnitude of the mismatch.
             </Para>
-            <Para>
-              The mutual consent reveal mechanism computes only the midpoint of the overlap — not the full range of either party. This ensures that even after consent, neither party learns the other's absolute position.
-            </Para>
-            <CodeBlock code={REVEAL_CODE} label="CipherCV.sol — revealSalary()" />
+            <Callout type="info">
+              The matching algorithm currently operates on salary range and experience. Skill vector matching is implemented via CipherBatchMatcher, which supports up to 50 candidate × employer pairs per transaction using a tournament-style matching algorithm.
+            </Callout>
           </Section>
 
           {/* Privacy Guarantees */}
           <Section id="privacy" title="6. Privacy Guarantees" tag="§ 06">
             <Para>
-              Cipher CV provides the following privacy guarantees, enforced cryptographically by the Fhenix fhEVM. These are not policy commitments — they are mathematical properties of the protocol.
+              The privacy guarantees of Cipher CV are derived from the mathematical properties of FHE, not from policy or trust assumptions. The following guarantees hold unconditionally, assuming the security of the underlying FHE scheme.
             </Para>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {[
                 {
-                  guarantee: "Input Confidentiality",
+                  guarantee: "Input Privacy",
                   formal: "∀ adversary A: Pr[A learns plaintext(input)] = negligible",
-                  desc: "No party — including the protocol operator, the Fhenix validators, or the counterparty — can learn the plaintext value of any submitted input. Inputs are encrypted before submission and never decrypted during computation.",
+                  desc: "No party — including the Fhenix validators, the Cipher CV team, or any on-chain observer — can learn the plaintext value of any encrypted input. This holds even if the adversary controls all parties except the input owner.",
                 },
                 {
-                  guarantee: "Output Minimality",
-                  formal: "Output ∈ {match, no-match} — no additional information",
-                  desc: "The matching function returns only a binary result. No score, no distance metric, no partial match signal. A rejection reveals nothing about why the match failed.",
+                  guarantee: "Output Privacy",
+                  formal: "match(a, b) = ebool — decryptable only by authorized party",
+                  desc: "The match result is an encrypted boolean. It can only be decrypted by the party holding the corresponding decryption key. An on-chain observer can see that a match computation occurred, but not whether it produced true or false.",
                 },
                 {
-                  guarantee: "Bilateral Consent Requirement",
-                  formal: "decrypt(salary) requires sig(candidate) ∧ sig(employer)",
-                  desc: "Salary figures cannot be decrypted unilaterally. Both parties must sign a consent transaction. Neither party can force a reveal without the other's cooperation.",
+                  guarantee: "Rejection Privacy",
+                  formal: "reject(a, b) reveals 0 bits about a or b",
+                  desc: "A rejection reveals no information about why the match failed. An adversary cannot distinguish a salary mismatch from an experience mismatch from a skill mismatch. All rejections are cryptographically identical.",
                 },
                 {
-                  guarantee: "Identity Separation",
-                  formal: "match(profile_A, profile_B) ⊥ identity(A) ∧ identity(B)",
-                  desc: "The matching computation is performed on encrypted profiles that contain no identity information. Names, addresses, and demographic signals are not part of the matching input.",
+                  guarantee: "Reveal Atomicity",
+                  formal: "reveal(a, b) requires consent(a) ∧ consent(b)",
+                  desc: "Salary reveal requires both parties to sign consent transactions. Neither party can unilaterally reveal the other's data. The consent requirement is enforced by the smart contract, not by policy.",
                 },
                 {
-                  guarantee: "Forward Secrecy",
-                  formal: "compromise(key_t) ⇏ decrypt(ciphertext_{t-1})",
-                  desc: "Compromise of a future key does not enable decryption of past submissions. Each profile submission uses a fresh encryption key derived from the client's wallet.",
+                  guarantee: "Stealth Indistinguishability",
+                  formal: "blocklist(domain) is computationally indistinguishable from ∅",
+                  desc: "An employer on the blocklist cannot distinguish between 'I am blocked' and 'there are no matching candidates'. The blocklist is stored as an encrypted hash — the employer cannot determine whether they are blocked.",
                 },
               ].map((item, i) => (
-                <motion.div
-                  key={item.guarantee}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.08 }}
-                  className="border border-border p-5 space-y-2"
-                >
+                <div key={item.guarantee} className="border border-border p-5 space-y-3">
                   <div className="flex items-start justify-between gap-4">
-                    <div className="font-bold text-sm text-foreground" style={{ fontFamily: "Space Grotesk" }}>{item.guarantee}</div>
-                    <div className="font-mono-cipher text-xs text-primary shrink-0">{item.formal}</div>
+                    <div className="font-bold text-foreground text-sm" style={{ fontFamily: "Space Grotesk" }}>{item.guarantee}</div>
+                    <div className="font-mono-cipher text-xs text-primary border border-primary/30 px-2 py-1 shrink-0">{item.formal}</div>
                   </div>
                   <div className="font-mono-cipher text-xs text-muted-foreground leading-relaxed">{item.desc}</div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </Section>
@@ -453,82 +444,109 @@ export default function WhitepaperPage() {
           {/* Architecture */}
           <Section id="architecture" title="7. System Architecture" tag="§ 07">
             <Para>
-              Cipher CV is a three-layer system: a client layer that handles encryption, a protocol layer that handles computation, and a storage layer that handles state. Each layer has a clearly defined trust boundary.
+              Cipher CV is composed of three layers: a client layer (React + @cofhe/sdk), a protocol layer (Fhenix fhEVM + 8 smart contracts), and a coordination layer (Convex real-time backend). Each layer has clearly defined responsibilities and information boundaries.
             </Para>
             <div className="border border-border">
               {[
                 {
-                  layer: "Client Layer",
-                  components: ["React Frontend", "CoFHE SDK", "Wallet Integration (RainbowKit + wagmi)"],
-                  trust: "Trusted by user",
-                  desc: "The client layer is responsible for encrypting all sensitive inputs before transmission. The CoFHE SDK generates encryption keys from the user's wallet signature, ensuring that only the wallet owner can decrypt their own data. No plaintext is transmitted over the network.",
+                  contract: "CipherRegistry",
+                  address: "0x92D5322caD60e583ca4502c08Bf9E75DcAd5CB79",
+                  desc: "Protocol address registry. Single source of truth for all deployed contract addresses. Supports upgrades, pausing, and admin transfer.",
                 },
                 {
-                  layer: "Protocol Layer",
-                  components: ["Fhenix fhEVM", "CipherCV.sol", "FHE Operators"],
-                  trust: "Trustless",
-                  desc: "The protocol layer executes matching logic on encrypted data. Smart contracts are immutable and publicly verifiable. The Fhenix fhEVM provides FHE primitives as EVM opcodes, enabling encrypted computation without trusted execution environments.",
+                  contract: "CipherCV",
+                  address: "0xe9B8e9bC8D447a1FE7746d3b870491226f8cB659",
+                  desc: "Core FHE matching engine. Candidates and employers submit encrypted profiles. Compatibility computed on ciphertext via FHE.gte() and FHE.and(). Mutual consent reveal via FHE.publishDecryptResult().",
                 },
                 {
-                  layer: "Storage Layer",
-                  components: ["On-chain euint256 state", "Encrypted profile registry", "Match result store"],
-                  trust: "Trustless",
-                  desc: "All state is stored on-chain as encrypted integers. The storage layer is append-only — submitted profiles cannot be modified or deleted. Match results are stored as encrypted booleans until both parties consent to decryption.",
+                  contract: "CipherVault",
+                  address: "0xeff0835318a9e6812150519321B3097Db685A361",
+                  desc: "Encrypted credential vault. Multi-credential storage with versioning, revocation, sealed output via FHE.sealoutput(), and access logging.",
                 },
-              ].map((layer, i) => (
-                <div key={layer.layer} className={`p-6 space-y-4 ${i < 2 ? "border-b border-border" : ""}`}>
-                  <div className="flex items-start justify-between gap-4 flex-wrap">
-                    <div>
-                      <div className="font-bold text-foreground" style={{ fontFamily: "Space Grotesk" }}>{layer.layer}</div>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {layer.components.map(c => (
-                          <span key={c} className="font-mono-cipher text-xs border border-border px-2 py-0.5 text-muted-foreground">{c}</span>
-                        ))}
-                      </div>
-                    </div>
-                    <span className={`font-mono-cipher text-xs px-2 py-1 border shrink-0 ${layer.trust === "Trustless" ? "border-primary text-primary" : "border-border text-muted-foreground"}`}>
-                      {layer.trust}
-                    </span>
+                {
+                  contract: "CipherGovernance",
+                  address: "0x6D4b9e6C8946f7bc4bBCee81f7E4b31f97F53707",
+                  desc: "On-chain governance with encrypted vote weights. Proposals, encrypted tallying, quorum enforcement, timelock, and parameter execution.",
+                },
+                {
+                  contract: "CipherEscrow",
+                  address: "0x2d3f35e6EC323ad66E288a8F32765bde35cf68A6",
+                  desc: "Interview Insurance escrow. ETH premium with FHE-gated release. Auto-refund if interview target not met. Protocol fee on completion.",
+                },
+                {
+                  contract: "CipherCounterOffer",
+                  address: "0xac95Fd56a9a18A5424370528a40035F47277A13d",
+                  desc: "Counter-offer calculator. Encrypted salary vs market benchmarks. Leverage score computation via FHE.select(). Sealed output for private viewing.",
+                },
+                {
+                  contract: "CipherStealth",
+                  address: "0xE4cCE042F239F02E5ce2F7aCFcd595Cbf988DB91",
+                  desc: "Stealth mode employer blocklist. Encrypted blocklist/allowlist. Time-locked profiles. Domain-level blocking. Full stealth mode toggle.",
+                },
+                {
+                  contract: "CipherBatchMatcher",
+                  address: "0xB89B8a766EFF04ABFa7781effeC8c5DA81801D3b",
+                  desc: "Batch tournament matching. Up to 50 candidate × employer pairs per transaction. Tournament mode for N×M matching. Gas-optimized.",
+                },
+              ].map((c, i) => (
+                <div key={c.contract} className={`grid grid-cols-1 md:grid-cols-4 gap-4 p-5 ${i < 7 ? "border-b border-border" : ""} hover:bg-secondary/10 transition-colors`}>
+                  <div>
+                    <div className="font-bold text-foreground text-sm" style={{ fontFamily: "Space Grotesk" }}>{c.contract}</div>
+                    <a
+                      href={`https://sepolia.arbiscan.io/address/${c.address}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono-cipher text-xs text-primary hover:underline flex items-center gap-1 mt-0.5"
+                    >
+                      {c.address.slice(0, 10)}...{c.address.slice(-6)}
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
                   </div>
-                  <div className="font-mono-cipher text-xs text-muted-foreground leading-relaxed">{layer.desc}</div>
+                  <div className="md:col-span-3 font-mono-cipher text-xs text-muted-foreground leading-relaxed">{c.desc}</div>
                 </div>
               ))}
             </div>
+            <Para>
+              The Convex backend stores hash commitments, match state, notifications, governance proposals, vault credentials, and token balances. It never stores plaintext salary or experience values — only keccak256 commitments that are safe to store off-chain.
+            </Para>
+            <CodeBlock code={REVEAL_CODE} label="CipherCV.sol — revealSalary() + @cofhe/sdk client" />
           </Section>
 
-          {/* Incentive Model */}
+          {/* Tokenomics */}
           <Section id="tokenomics" title="8. Incentive Model" tag="§ 08">
             <Para>
-              Cipher CV does not require a native token for Wave 1. The protocol operates on Fhenix's native gas token for transaction fees. The incentive model is designed to align the interests of candidates, employers, and the protocol.
+              The Cipher CV protocol uses a CIPHER token to align incentives between candidates, employers, and protocol contributors. Token holders participate in governance, earn rewards for protocol participation, and stake tokens to increase voting weight.
             </Para>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-border">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border border-border">
               {[
                 {
-                  actor: "Candidates",
-                  incentive: "Privacy-preserving job search",
-                  mechanism: "Submit encrypted profiles at zero cost. Pay gas only for on-chain commitment. Receive match notifications without revealing identity.",
-                  alignment: "Candidates benefit from privacy — they have no incentive to submit false data, as false data reduces match quality.",
+                  mechanism: "Participation Rewards",
+                  desc: "Candidates and employers earn CIPHER tokens for submitting encrypted profiles, running matches, and signing consent transactions. Rewards are proportional to protocol activity.",
                 },
                 {
-                  actor: "Employers",
-                  incentive: "Higher-quality candidate pool",
-                  mechanism: "Post encrypted job specs. Pay gas for on-chain commitment. Access a candidate pool that includes high-value candidates who would not participate in transparent markets.",
-                  alignment: "Employers benefit from access to candidates who opt out of traditional markets due to privacy concerns.",
+                  mechanism: "Governance Staking",
+                  desc: "Token holders stake CIPHER to participate in governance. Staked tokens increase voting weight. Proposals require a minimum quorum of staked tokens to pass.",
                 },
                 {
-                  actor: "Protocol",
-                  incentive: "Network effects",
-                  mechanism: "Wave 2 introduces a protocol fee on successful matches — a small percentage of the agreed salary, paid by the employer upon mutual consent reveal. This aligns protocol revenue with successful outcomes.",
-                  alignment: "Protocol revenue is tied to match quality, not volume. Incentivizes accurate matching over maximizing throughput.",
+                  mechanism: "Referral Program",
+                  desc: "Existing users earn CIPHER tokens for referring new candidates and employers. Referral rewards are tracked on-chain via keccak256 commitment hashes.",
+                },
+                {
+                  mechanism: "Protocol Fee",
+                  desc: "A small protocol fee (denominated in ETH) is charged on successful salary reveals. Fees are distributed to staked token holders and the protocol treasury.",
+                },
+                {
+                  mechanism: "Interview Insurance",
+                  desc: "Candidates pay an ETH premium to the CipherEscrow contract. If the target number of interviews is not reached within the time window, the premium is auto-refunded.",
+                },
+                {
+                  mechanism: "ATS Integration",
+                  desc: "Employers can connect Greenhouse, Lever, or Workday ATS systems. API key hashes are stored encrypted. Integration activity earns protocol rewards.",
                 },
               ].map((item, i) => (
-                <div key={item.actor} className={`p-6 space-y-3 ${i < 2 ? "border-b md:border-b-0 md:border-r border-border" : ""}`}>
-                  <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">{item.actor}</div>
-                  <div className="font-bold text-sm text-foreground" style={{ fontFamily: "Space Grotesk" }}>{item.incentive}</div>
-                  <div className="font-mono-cipher text-xs text-muted-foreground leading-relaxed">{item.mechanism}</div>
-                  <div className="border-t border-border pt-3 font-mono-cipher text-xs text-muted-foreground">
-                    <span className="text-primary">Alignment: </span>{item.alignment}
-                  </div>
+                <div key={item.mechanism} className={`p-5 space-y-2 ${i % 2 === 0 ? "border-b md:border-b-0 md:border-r border-border" : "border-b border-border"} ${i >= 4 ? "border-b-0" : ""}`}>
+                  <div className="font-mono-cipher text-xs text-primary">{item.mechanism}</div>
+                  <div className="font-mono-cipher text-xs text-muted-foreground leading-relaxed">{item.desc}</div>
                 </div>
               ))}
             </div>
@@ -536,12 +554,15 @@ export default function WhitepaperPage() {
 
           {/* Roadmap */}
           <Section id="roadmap" title="9. Roadmap" tag="§ 09">
+            <Para>
+              The Cipher CV protocol has been developed in three phases, each building on the previous. The current state reflects Phase 3 — all 8 contracts live on Arbitrum Sepolia, full on-chain wiring across all surfaces, and a public SDK.
+            </Para>
             <div className="border border-border">
               {[
                 {
-                  wave: "Wave 1",
-                  status: "Active",
-                  title: "Frontend + Demo Layer",
+                  wave: "Phase 1",
+                  status: "Complete",
+                  title: "Foundation Layer",
                   items: [
                     "React frontend with Swiss Brutalist Privacy design system",
                     "Simulated FHE matching with visual encrypted computation",
@@ -549,50 +570,70 @@ export default function WhitepaperPage() {
                     "Ethereum Sepolia Testnet connection",
                     "Candidate and Employer dashboard shells",
                     "Interactive demo with preset match scenarios",
+                    "MoaiTransmission animation as privacy-by-motion centerpiece",
                   ],
                 },
                 {
-                  wave: "Wave 2",
-                  status: "Active",
+                  wave: "Phase 2",
+                  status: "Complete",
                   title: "Smart Contract Layer",
                   items: [
-                    "CipherCV.sol deployment on Ethereum Sepolia Testnet",
-                    "CoFHE SDK integration for client-side encryption",
-                    "On-chain profile submission and storage",
-                    "Blind matching computation via FHE operators",
-                    "Mutual consent reveal mechanism",
-                    "Match result notification system",
+                    "8 CoFHE contracts deployed on Arbitrum Sepolia (Chain ID: 421614)",
+                    "@cofhe/sdk integration for client-side encryption",
+                    "On-chain profile submission and storage (euint32 mappings)",
+                    "Blind matching computation via FHE.gte() and FHE.and()",
+                    "Mutual consent reveal via FHE.publishDecryptResult()",
+                    "Convex real-time backend with 12 tables",
+                    "Stealth Mode, Counter-Offer, Interview Insurance, Governance",
                   ],
                 },
                 {
-                  wave: "Wave 3",
-                  status: "Planned",
+                  wave: "Phase 3",
+                  status: "Live",
                   title: "Production Layer",
                   items: [
+                    "Full on-chain wiring across all 8 surfaces",
+                    "Multi-network support: Arbitrum Sepolia + Ethereum Sepolia",
+                    "TxProgressBar for multi-step on-chain actions",
+                    "Explorer links for all on-chain transactions",
+                    "Public SDK with 24+ methods",
+                    "Batch tournament matching (CipherBatchMatcher)",
+                    "ZK Vault with sealed output credentials",
+                    "Encrypted governance voting with quorum enforcement",
+                    "ATS integrations: Greenhouse, Lever, Workday",
+                    "CIPHER token rewards and referral program",
+                  ],
+                },
+                {
+                  wave: "Phase 4",
+                  status: "Planned",
+                  title: "Mainnet & Ecosystem",
+                  items: [
                     "Fhenix Mainnet deployment",
-                    "Skill vector encryption and matching",
+                    "Skill vector encryption and matching (euint32 arrays)",
                     "Identity verification with zero-knowledge proofs",
-                    "Protocol fee mechanism",
-                    "Employer reputation system (encrypted)",
                     "Multi-party matching for team composition",
+                    "Employer reputation system (encrypted)",
+                    "Cross-chain matching via LayerZero",
+                    "Mobile SDK for iOS and Android",
                   ],
                 },
               ].map((wave, i) => (
-                <div key={wave.wave} className={`p-6 grid grid-cols-1 md:grid-cols-4 gap-6 ${i < 2 ? "border-b border-border" : ""}`}>
+                <div key={wave.wave} className={`p-6 grid grid-cols-1 md:grid-cols-4 gap-6 ${i < 3 ? "border-b border-border" : ""}`}>
                   <div className="space-y-2">
                     <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">{wave.wave}</div>
                     <div className="font-bold text-foreground" style={{ fontFamily: "Space Grotesk" }}>{wave.title}</div>
                     <span className={`font-mono-cipher text-xs px-2 py-1 border inline-block ${
-                      wave.status === "Active" ? "border-primary text-primary" :
-                      wave.status === "Deploying" ? "border-muted-foreground text-muted-foreground" :
+                      wave.status === "Live" ? "border-primary text-primary" :
+                      wave.status === "Complete" ? "border-primary/50 text-primary/70" :
                       "border-border text-muted-foreground"
                     }`}>{wave.status}</span>
                   </div>
                   <div className="md:col-span-3 space-y-2">
                     {wave.items.map(item => (
                       <div key={item} className="flex items-start gap-2">
-                        <span className={`font-mono-cipher text-xs mt-0.5 shrink-0 ${wave.status === "Active" ? "text-primary" : "text-muted-foreground"}`}>
-                          {wave.status === "Active" ? "✓" : "—"}
+                        <span className={`font-mono-cipher text-xs mt-0.5 shrink-0 ${wave.status === "Live" || wave.status === "Complete" ? "text-primary" : "text-muted-foreground"}`}>
+                          {wave.status === "Live" || wave.status === "Complete" ? "✓" : "—"}
                         </span>
                         <span className="font-mono-cipher text-xs text-muted-foreground">{item}</span>
                       </div>
@@ -612,10 +653,10 @@ export default function WhitepaperPage() {
               By building on Fhenix's fhEVM, Cipher CV achieves something that was previously impossible: a matching system that can confirm compatibility without learning the inputs that produced the match. This is not a privacy feature — it is the core mechanism of the protocol. Privacy is not added on top; it is the foundation.
             </Para>
             <Callout type="key">
-              The encrypted labor market is not a niche product for privacy advocates. It is the correct design for any market where information asymmetry produces systematically unfair outcomes. Cipher CV is the first implementation of this design on a production-grade FHE blockchain.
+              The encrypted labor market is not a niche product for privacy advocates. It is the correct design for any market where information asymmetry produces systematically unfair outcomes. Cipher CV is the first implementation of this design on a production-grade FHE blockchain, with 8 live contracts on Arbitrum Sepolia and a full-stack application serving real users.
             </Callout>
             <Para>
-              Wave 1 demonstrates the user experience and interaction model. Wave 2 deploys the cryptographic infrastructure. Wave 3 scales to production. The protocol is designed to be composable — any application that requires privacy-preserving matching can build on the Cipher CV protocol layer.
+              Phase 1 demonstrated the user experience and interaction model. Phase 2 deployed the cryptographic infrastructure. Phase 3 wired all surfaces to on-chain paths with full explorer visibility. Phase 4 scales to mainnet. The protocol is designed to be composable — any application that requires privacy-preserving matching can build on the Cipher CV protocol layer.
             </Para>
             <div className="border border-border p-6 grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
               {[
@@ -636,8 +677,8 @@ export default function WhitepaperPage() {
           {/* Footer */}
           <div className="pt-12 pb-6 border-t border-border mt-12">
             <div className="font-mono-cipher text-xs text-muted-foreground space-y-1">
-              <div>Cipher CV Protocol — Technical Whitepaper v3.0</div>
-              <div>Fhenix Privacy-by-Design Buildathon — Wave 3 — {new Date().getFullYear()}</div>
+              <div>Cipher CV Protocol — Technical Whitepaper</div>
+              <div>Cipher CV Protocol — {new Date().getFullYear()}</div>
               <div className="text-primary mt-2">All cryptographic guarantees are enforced by the Fhenix fhEVM. Privacy is not a policy — it is a mathematical property.</div>
             </div>
           </div>

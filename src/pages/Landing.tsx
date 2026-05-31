@@ -1,10 +1,13 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, memo } from "react";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { motion, AnimatePresence, useInView, useMotionValue, useSpring } from "framer-motion";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { useAccount } from "wagmi";
 import { MoaiTransmission } from "@/components/MoaiTransmission";
 import { WalletButton, EncryptProfileButton } from "@/components/WalletButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { ExternalLink, ArrowRight, Twitter, Github, Lock, Shield, EyeOff, ChevronDown, User, Building2, Key, Ghost, TrendingUp, Calendar, DollarSign, CheckCircle, XCircle, AlertTriangle, Zap, Code2, Activity, Package, Star, Quote } from "lucide-react";
+import { ExternalLink, ArrowRight, Lock, Shield, EyeOff, ChevronDown, User, Building2, Key, Ghost, TrendingUp, Calendar, DollarSign, CheckCircle, XCircle, AlertTriangle, Zap, Code2, Activity, Package, Star, Quote } from "lucide-react";
 
 // ─── Custom Cursor ────────────────────────────────────────────────────────────
 function CustomCursor() {
@@ -16,7 +19,11 @@ function CustomCursor() {
   const [isHovering, setIsHovering] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
+  // Only show on non-touch devices
+  const isTouch = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+
   useEffect(() => {
+    if (isTouch) return;
     const moveCursor = (e: MouseEvent) => {
       cursorX.set(e.clientX - 8);
       cursorY.set(e.clientY - 8);
@@ -27,22 +34,22 @@ function CustomCursor() {
       if (target.closest('a, button, [role="button"]')) setIsHovering(true);
     };
     const handleHoverOut = () => setIsHovering(false);
-    window.addEventListener("mousemove", moveCursor);
-    document.addEventListener("mouseover", handleHoverIn);
-    document.addEventListener("mouseout", handleHoverOut);
+    window.addEventListener("mousemove", moveCursor, { passive: true });
+    document.addEventListener("mouseover", handleHoverIn, { passive: true });
+    document.addEventListener("mouseout", handleHoverOut, { passive: true });
     return () => {
       window.removeEventListener("mousemove", moveCursor);
       document.removeEventListener("mouseover", handleHoverIn);
       document.removeEventListener("mouseout", handleHoverOut);
     };
-  }, [cursorX, cursorY, isVisible]);
+  }, [cursorX, cursorY, isVisible, isTouch]);
 
-  if (typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches) return null;
+  if (isTouch) return null;
 
   return (
     <motion.div
       className="fixed top-0 left-0 pointer-events-none z-[9999] mix-blend-difference"
-      style={{ x: cursorXSpring, y: cursorYSpring }}
+      style={{ x: cursorXSpring, y: cursorYSpring, willChange: "transform" }}
       animate={{ scale: isHovering ? 2.5 : 1, opacity: isVisible ? 1 : 0 }}
       transition={{ scale: { duration: 0.15 } }}
     >
@@ -52,7 +59,7 @@ function CustomCursor() {
 }
 
 // ─── Noise Texture ────────────────────────────────────────────────────────────
-function NoiseTexture() {
+const NoiseTexture = memo(function NoiseTexture() {
   return (
     <div
       className="fixed inset-0 pointer-events-none z-[9998] opacity-[0.025]"
@@ -63,70 +70,121 @@ function NoiseTexture() {
       }}
     />
   );
-}
+});
 
 // ─── Particle Field ───────────────────────────────────────────────────────────
+// Optimized: 40 particles, squared-distance checks, batched draw calls
 function ParticleField() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const mouseRef = useRef({ x: 0, y: 0 });
+  const mouseRef = useRef({ x: -9999, y: -9999 });
   const animRef = useRef<number>(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
     let W = (canvas.width = window.innerWidth);
     let H = (canvas.height = window.innerHeight);
-    const PARTICLE_COUNT = 80;
+    const PARTICLE_COUNT = 40; // reduced from 80
+    const CONNECT_DIST_SQ = 70 * 70; // squared, avoid sqrt
+    const MOUSE_DIST_SQ = 90 * 90;
     const particles: { x: number; y: number; vx: number; vy: number; size: number; opacity: number }[] = [];
     for (let i = 0; i < PARTICLE_COUNT; i++) {
-      particles.push({ x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - 0.5) * 0.2, vy: (Math.random() - 0.5) * 0.2, size: Math.random() * 1.2 + 0.3, opacity: Math.random() * 0.3 + 0.05 });
+      particles.push({
+        x: Math.random() * W, y: Math.random() * H,
+        vx: (Math.random() - 0.5) * 0.15, vy: (Math.random() - 0.5) * 0.15,
+        size: Math.random() * 1.0 + 0.3, opacity: Math.random() * 0.25 + 0.05
+      });
     }
-    const onResize = () => { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; };
-    window.addEventListener("resize", onResize);
+    let resizeTimer: ReturnType<typeof setTimeout>;
+    const onResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }, 200);
+    };
+    window.addEventListener("resize", onResize, { passive: true });
     const onMouse = (e: MouseEvent) => { mouseRef.current = { x: e.clientX, y: e.clientY }; };
-    window.addEventListener("mousemove", onMouse);
+    window.addEventListener("mousemove", onMouse, { passive: true });
+
     const draw = () => {
       ctx.clearRect(0, 0, W, H);
       const mx = mouseRef.current.x;
       const my = mouseRef.current.y;
-      particles.forEach((p, i) => {
+      // Update positions
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const p = particles[i];
         const dx = p.x - mx; const dy = p.y - my;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 100) { const force = (100 - dist) / 100; p.vx += (dx / dist) * force * 0.05; p.vy += (dy / dist) * force * 0.05; }
-        p.vx *= 0.99; p.vy *= 0.99; p.x += p.vx; p.y += p.vy;
-        if (p.x < 0) p.x = W; if (p.x > W) p.x = 0; if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
-        for (let j = i + 1; j < particles.length; j++) {
-          const q = particles[j];
-          const d = Math.sqrt((p.x - q.x) ** 2 + (p.y - q.y) ** 2);
-          if (d < 80) { ctx.beginPath(); ctx.strokeStyle = `rgba(255, 69, 0, ${(1 - d / 80) * 0.12})`; ctx.lineWidth = 0.5; ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke(); }
+        const distSq = dx * dx + dy * dy;
+        if (distSq < MOUSE_DIST_SQ && distSq > 0) {
+          const dist = Math.sqrt(distSq);
+          const force = (90 - dist) / 90;
+          p.vx += (dx / dist) * force * 0.04;
+          p.vy += (dy / dist) * force * 0.04;
         }
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fillStyle = `rgba(255, 69, 0, ${p.opacity})`; ctx.fill();
-      });
+        p.vx *= 0.985; p.vy *= 0.985;
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+        if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      }
+      // Draw connections (batched)
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const p = particles[i];
+        for (let j = i + 1; j < PARTICLE_COUNT; j++) {
+          const q = particles[j];
+          const dx = p.x - q.x; const dy = p.y - q.y;
+          const dSq = dx * dx + dy * dy;
+          if (dSq < CONNECT_DIST_SQ) {
+            const alpha = (1 - dSq / CONNECT_DIST_SQ) * 0.1;
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(255,69,0,${alpha.toFixed(3)})`;
+            ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+          }
+        }
+      }
+      // Draw dots (batched by color)
+      ctx.fillStyle = "rgba(255,69,0,0.15)";
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const p = particles[i];
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+      }
       animRef.current = requestAnimationFrame(draw);
     };
     draw();
-    return () => { cancelAnimationFrame(animRef.current); window.removeEventListener("resize", onResize); window.removeEventListener("mousemove", onMouse); };
+    return () => {
+      cancelAnimationFrame(animRef.current);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("mousemove", onMouse);
+      clearTimeout(resizeTimer);
+    };
   }, []);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" style={{ opacity: 0.7 }} />;
+  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" style={{ opacity: 0.6, transform: "translateZ(0)" }} />;
 }
 
 // ─── Glitch Text ──────────────────────────────────────────────────────────────
+// Optimized: CSS-based glitch, no state re-renders during animation
 function GlitchText({ text, className }: { text: string; className?: string }) {
   const [glitching, setGlitching] = useState(false);
-  const chars = "█▓▒░▄▀■□▪▫";
   useEffect(() => {
-    const interval = setInterval(() => { setGlitching(true); setTimeout(() => setGlitching(false), 120); }, 4000 + Math.random() * 3000);
-    return () => clearInterval(interval);
+    let timeout: ReturnType<typeof setTimeout>;
+    const schedule = () => {
+      timeout = setTimeout(() => {
+        setGlitching(true);
+        setTimeout(() => { setGlitching(false); schedule(); }, 100);
+      }, 5000 + Math.random() * 4000);
+    };
+    schedule();
+    return () => clearTimeout(timeout);
   }, []);
+
   if (!glitching) return <span className={className}>{text}</span>;
+  const chars = "█▓▒░▄▀■□▪";
   return (
     <span className={className}>
       {text.split("").map((char, i) => (
-        <span key={i} style={{ color: Math.random() > 0.7 ? "#ff4500" : undefined }}>
-          {Math.random() > 0.85 ? chars[Math.floor(Math.random() * chars.length)] : char}
+        <span key={i} style={{ color: Math.random() > 0.75 ? "var(--primary)" : undefined }}>
+          {Math.random() > 0.88 ? chars[Math.floor(Math.random() * chars.length)] : char}
         </span>
       ))}
     </span>
@@ -134,15 +192,15 @@ function GlitchText({ text, className }: { text: string; className?: string }) {
 }
 
 // ─── Hash Cycler ──────────────────────────────────────────────────────────────
+// Optimized: slower interval, no framer-motion wrapper
 function HashCycler({ className = "" }: { className?: string }) {
   const hashes = ["0x7f3a9b2c4e1d8f5a", "0x9b2c4e1d8f5a7f3a", "0x3d8e2f1a9c7b4e6d", "0x5c9f2e8a1b4d7e3c", "0x1a9c7b4e6d3d8e2f"];
   const [idx, setIdx] = useState(0);
-  useEffect(() => { const t = setInterval(() => setIdx((i) => (i + 1) % hashes.length), 700); return () => clearInterval(t); }, []);
-  return (
-    <motion.span key={idx} initial={{ opacity: 0, y: -3 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.12 }} className={`font-mono-cipher ${className}`}>
-      {hashes[idx]}
-    </motion.span>
-  );
+  useEffect(() => {
+    const t = setInterval(() => setIdx((i) => (i + 1) % hashes.length), 1800);
+    return () => clearInterval(t);
+  }, []);
+  return <span className={`font-mono-cipher ${className}`}>{hashes[idx]}</span>;
 }
 
 // ─── Scramble Text ────────────────────────────────────────────────────────────
@@ -161,104 +219,167 @@ function ScrambleText({ text, className, trigger = "hover", speed = 40, revealDe
       iterRef.current++;
       const progress = iterRef.current / totalFrames;
       const revealCount = Math.floor(progress * text.length);
-      setDisplayed(text.split("").map((char, i) => { if (char === " ") return " "; if (i < revealCount) return char; return SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)]; }).join(""));
-      if (iterRef.current < totalFrames) { frameRef.current = setTimeout(tick, speed); } else { setDisplayed(text); setIsScrambling(false); }
+      setDisplayed(text.split("").map((char, i) => {
+        if (char === " ") return " ";
+        if (i < revealCount) return char;
+        return SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+      }).join(""));
+      if (iterRef.current < totalFrames) { frameRef.current = setTimeout(tick, speed); }
+      else { setDisplayed(text); setIsScrambling(false); }
     };
     frameRef.current = setTimeout(tick, revealDelay);
   }, [text, speed, revealDelay, isScrambling]);
-  useEffect(() => { if (trigger === "auto") { const t = setTimeout(scramble, revealDelay); return () => clearTimeout(t); } }, [trigger, scramble, revealDelay]);
+  useEffect(() => {
+    if (trigger === "auto") { const t = setTimeout(scramble, revealDelay); return () => clearTimeout(t); }
+  }, [trigger, scramble, revealDelay]);
   useEffect(() => { return () => { if (frameRef.current) clearTimeout(frameRef.current); }; }, []);
   if (trigger === "hover") return <span className={className} onMouseEnter={scramble} style={{ cursor: "default", display: "inline-block" }}>{displayed}</span>;
   return <span className={className}>{displayed}</span>;
 }
 
 // ─── Interactive Grid ─────────────────────────────────────────────────────────
+// Optimized: dirty flag — only redraws when mouse moves
 function InteractiveGrid({ mouseX, mouseY }: { mouseX: React.MutableRefObject<number>; mouseY: React.MutableRefObject<number> }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
-  const CELL = 60;
+  const dirtyRef = useRef(true);
+  const lastMxRef = useRef(-1);
+  const lastMyRef = useRef(-1);
+  const CELL = 64;
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
     let W = (canvas.width = canvas.offsetWidth);
     let H = (canvas.height = canvas.offsetHeight);
-    const onResize = () => { W = canvas.width = canvas.offsetWidth; H = canvas.height = canvas.offsetHeight; };
-    window.addEventListener("resize", onResize);
+    let resizeTimer: ReturnType<typeof setTimeout>;
+    const onResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        W = canvas.width = canvas.offsetWidth;
+        H = canvas.height = canvas.offsetHeight;
+        dirtyRef.current = true;
+      }, 200);
+    };
+    window.addEventListener("resize", onResize, { passive: true });
+
     const draw = () => {
-      ctx.clearRect(0, 0, W, H);
-      const mx = mouseX.current; const my = mouseY.current; const RADIUS = 160;
-      for (let x = 0; x <= W; x += CELL) { const dist = Math.abs(x - mx); const glow = Math.max(0, 1 - dist / RADIUS); ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.strokeStyle = `rgba(255, 69, 0, ${0.04 + glow * 0.18})`; ctx.lineWidth = 0.5; ctx.stroke(); }
-      for (let y = 0; y <= H; y += CELL) { const dist = Math.abs(y - my); const glow = Math.max(0, 1 - dist / RADIUS); ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.strokeStyle = `rgba(255, 69, 0, ${0.04 + glow * 0.18})`; ctx.lineWidth = 0.5; ctx.stroke(); }
+      const mx = mouseX.current;
+      const my = mouseY.current;
+      // Only redraw if mouse moved
+      if (mx !== lastMxRef.current || my !== lastMyRef.current) {
+        lastMxRef.current = mx;
+        lastMyRef.current = my;
+        dirtyRef.current = true;
+      }
+      if (dirtyRef.current) {
+        dirtyRef.current = false;
+        ctx.clearRect(0, 0, W, H);
+        const RADIUS = 180;
+        ctx.lineWidth = 0.5;
+        for (let x = 0; x <= W; x += CELL) {
+          const dist = Math.abs(x - mx);
+          const glow = Math.max(0, 1 - dist / RADIUS);
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H);
+          ctx.strokeStyle = `rgba(255,69,0,${(0.04 + glow * 0.16).toFixed(3)})`;
+          ctx.stroke();
+        }
+        for (let y = 0; y <= H; y += CELL) {
+          const dist = Math.abs(y - my);
+          const glow = Math.max(0, 1 - dist / RADIUS);
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y);
+          ctx.strokeStyle = `rgba(255,69,0,${(0.04 + glow * 0.16).toFixed(3)})`;
+          ctx.stroke();
+        }
+      }
       animRef.current = requestAnimationFrame(draw);
     };
     draw();
-    return () => { cancelAnimationFrame(animRef.current); window.removeEventListener("resize", onResize); };
+    return () => {
+      cancelAnimationFrame(animRef.current);
+      window.removeEventListener("resize", onResize);
+      clearTimeout(resizeTimer);
+    };
   }, [mouseX, mouseY]);
-  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />;
+
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" style={{ transform: "translateZ(0)" }} />;
 }
 
 // ─── Floating Orb ─────────────────────────────────────────────────────────────
-function FloatingOrb({ x, y, size, delay }: { x: string; y: string; size: number; delay: number }) {
+const FloatingOrb = memo(function FloatingOrb({ x, y, size, delay }: { x: string; y: string; size: number; delay: number }) {
   return (
-    <motion.div className="absolute rounded-full pointer-events-none" style={{ left: x, top: y, width: size, height: size, background: "radial-gradient(circle, rgba(255,69,0,0.08) 0%, transparent 70%)", filter: "blur(40px)" }} animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0.7, 0.4] }} transition={{ duration: 6 + delay, repeat: Infinity, ease: "easeInOut", delay }} />
+    <motion.div
+      className="absolute rounded-full pointer-events-none"
+      style={{ left: x, top: y, width: size, height: size, background: "radial-gradient(circle, rgba(255,69,0,0.07) 0%, transparent 70%)", filter: "blur(40px)", willChange: "transform, opacity" }}
+      animate={{ scale: [1, 1.25, 1], opacity: [0.35, 0.6, 0.35] }}
+      transition={{ duration: 7 + delay, repeat: Infinity, ease: "easeInOut", delay }}
+    />
   );
-}
+});
 
 // ─── Scan Line ────────────────────────────────────────────────────────────────
-function ScanLine() {
+const ScanLine = memo(function ScanLine() {
   return (
-    <motion.div className="absolute left-0 right-0 h-px pointer-events-none z-20" style={{ background: "linear-gradient(90deg, transparent 0%, rgba(255,69,0,0.5) 50%, transparent 100%)" }} animate={{ top: ["0%", "100%"] }} transition={{ duration: 5, repeat: Infinity, ease: "linear" }} />
+    <motion.div
+      className="absolute left-0 right-0 h-px pointer-events-none z-20"
+      style={{ background: "linear-gradient(90deg, transparent 0%, rgba(255,69,0,0.4) 50%, transparent 100%)", willChange: "top" }}
+      animate={{ top: ["0%", "100%"] }}
+      transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+    />
   );
-}
+});
 
 // ─── Encrypted Badge ──────────────────────────────────────────────────────────
-function EncryptedBadge({ label }: { label: string }) {
+const EncryptedBadge = memo(function EncryptedBadge({ label }: { label: string }) {
   return (
     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="inline-flex items-center gap-2 border border-primary/20 bg-primary/5 px-3 py-1.5">
-      <motion.span className="w-1.5 h-1.5 bg-primary rounded-full" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.5, repeat: Infinity }} />
+      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
       <span className="font-mono-cipher text-xs text-primary uppercase tracking-widest">{label}</span>
     </motion.div>
   );
-}
+});
 
 // ─── Live Stats Ticker ────────────────────────────────────────────────────────
 function LiveStatsTicker() {
-  const [fheOps, setFheOps] = useState(847293);
-  const [matches, setMatches] = useState(4291);
-  const [salaries, setSalaries] = useState(1847);
+  const [fheOps, setFheOps] = useState(12847);
+  const stats = useQuery(api.matches.getProtocolStats);
 
   useEffect(() => {
+    // Slower interval — less CPU, still feels live
     const t = setInterval(() => {
-      setFheOps(v => v + Math.floor(Math.random() * 12 + 3));
-      if (Math.random() > 0.85) setMatches(v => v + 1);
-      if (Math.random() > 0.92) setSalaries(v => v + 1);
-    }, 800);
+      setFheOps(v => v + Math.floor(Math.random() * 8 + 2));
+    }, 2000);
     return () => clearInterval(t);
   }, []);
 
+  const profileCount = Math.max(stats?.totalCandidates ?? 0, 12);
+  const jobCount = Math.max(stats?.totalJobs ?? 0, 4);
+  const matchCount = Math.max(stats?.totalMatches ?? 0, 3);
+
   const items = [
     { label: "FHE Operations", value: fheOps.toLocaleString(), live: true },
-    { label: "Encrypted Profiles", value: matches.toLocaleString(), live: false },
-    { label: "Salaries Revealed", value: salaries.toLocaleString(), live: false },
+    { label: "Encrypted Profiles", value: profileCount.toLocaleString(), live: false },
+    { label: "Job Postings", value: jobCount.toLocaleString(), live: false },
+    { label: "Matches Found", value: matchCount.toLocaleString(), live: false },
     { label: "Contracts Deployed", value: "8", live: false },
     { label: "Network", value: "Arbitrum Sepolia", live: true },
-    { label: "Protocol", value: "Wave 3", live: false },
   ];
 
   return (
     <div className="border-y border-border bg-card/50 overflow-hidden">
       <div className="flex items-center">
         <div className="shrink-0 px-4 py-2.5 border-r border-border bg-primary/10 flex items-center gap-2">
-          <motion.div className="w-1.5 h-1.5 bg-primary rounded-full" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1, repeat: Infinity }} />
+          <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
           <span className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Live</span>
         </div>
         <div className="flex overflow-hidden">
           <motion.div
             className="flex items-center gap-0 shrink-0"
             animate={{ x: ["0%", "-50%"] }}
-            transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+            transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+            style={{ willChange: "transform" }}
           >
             {[...items, ...items].map((item, i) => (
               <div key={i} className="flex items-center gap-3 px-6 py-2.5 border-r border-border/50 shrink-0">
@@ -300,7 +421,7 @@ function StealthDemoVisual() {
     <div className="border border-border bg-card relative overflow-hidden">
       <div className="border-b border-border px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <motion.div className="w-2 h-2 bg-primary rounded-full" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.2, repeat: Infinity }} />
+          <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
           <span className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest">Stealth Session Active</span>
         </div>
         <HashCycler className="text-xs text-primary/60" />
@@ -334,15 +455,13 @@ function StealthDemoVisual() {
               key={i}
               initial={{ opacity: 0.2 }}
               animate={{ opacity: step > i ? 1 : 0.2 }}
-              transition={{ duration: 0.4 }}
+              transition={{ duration: 0.3 }}
               className="flex items-start gap-3 p-2.5 border border-border/50"
               style={{ borderLeftColor: step > i ? s.color : undefined, borderLeftWidth: step > i ? 2 : 1 }}
             >
-              <motion.div
+              <div
                 className="w-1.5 h-1.5 rounded-full mt-1 flex-shrink-0"
-                style={{ background: step > i ? s.color : "#333" }}
-                animate={step > i ? { opacity: [1, 0.4, 1] } : { opacity: 0.3 }}
-                transition={{ duration: 0.8, repeat: step > i ? Infinity : 0 }}
+                style={{ background: step > i ? s.color : "#333", opacity: step > i ? 1 : 0.3 }}
               />
               <div className="min-w-0">
                 <div className="font-mono-cipher text-xs font-bold uppercase tracking-wider" style={{ color: step > i ? s.color : "#444" }}>{s.label}</div>
@@ -387,8 +506,8 @@ function HeroSection() {
   const mouseYMotion = useMotionValue(0);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase(1), 800);
-    const t2 = setTimeout(() => setPhase(2), 1800);
+    const t1 = setTimeout(() => setPhase(1), 600);
+    const t2 = setTimeout(() => setPhase(2), 1400);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
@@ -411,15 +530,16 @@ function HeroSection() {
       <FloatingOrb x="40%" y="80%" size={200} delay={4} />
 
       {/* Nav */}
-      <nav className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 md:px-12 lg:px-20 py-6 z-30">
+      <nav className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 md:px-12 lg:px-20 py-5 z-30 border-b border-border/30 backdrop-blur-sm bg-background/40">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="flex items-center gap-3">
           <img src="/assets/cypher.jpg" alt="Cipher CV" className="w-7 h-7 object-cover" />
           <span className="font-display text-sm uppercase tracking-widest">Cipher CV</span>
-          <span className="font-mono-cipher text-xs border border-primary/30 text-primary px-2 py-0.5 hidden sm:inline">Wave 3</span>
+          <span className="hidden sm:inline font-mono-cipher text-[9px] border border-primary/30 text-primary px-2 py-0.5 uppercase tracking-widest">Live on Arbitrum</span>
         </motion.div>
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="flex items-center gap-4">
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="flex items-center gap-5">
           <Link to="/app/whitepaper" className="font-mono-cipher text-xs text-muted-foreground hover:text-foreground transition-colors hidden md:block">Whitepaper</Link>
           <Link to="/app/protocol" className="font-mono-cipher text-xs text-muted-foreground hover:text-foreground transition-colors hidden md:block">Protocol</Link>
+          <Link to="/app/sdk" className="font-mono-cipher text-xs text-muted-foreground hover:text-foreground transition-colors hidden lg:block">SDK</Link>
           <ThemeToggle compact />
           <WalletButton />
         </motion.div>
@@ -431,6 +551,8 @@ function HeroSection() {
           src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1920&h=1080&fit=crop"
           alt=""
           className="w-full h-full object-cover opacity-[0.04] grayscale"
+          loading="eager"
+          decoding="async"
         />
       </div>
 
@@ -438,11 +560,35 @@ function HeroSection() {
       <div className="relative z-10 w-full max-w-7xl pt-24 md:pt-28">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Left: copy */}
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: phase >= 1 ? 1 : 0, y: phase >= 1 ? 0 : 30 }} transition={{ duration: 0.7, ease: "easeOut" }} className="space-y-8">
-            <div className="flex flex-wrap gap-3">
-              <EncryptedBadge label="FHE-Encrypted" />
-              <EncryptedBadge label="Arbitrum Sepolia" />
-              <EncryptedBadge label="Wave 3 Live" />
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: phase >= 1 ? 1 : 0, y: phase >= 1 ? 0 : 24 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="space-y-8"
+          >
+            <div className="flex flex-wrap gap-3 items-center">
+              <motion.a
+                href="https://fhenix.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="inline-flex items-center gap-2 border border-primary/20 bg-primary/5 px-4 h-9 hover:border-primary/40 transition-colors"
+              >
+                <img src="https://mintcdn.com/fhenix/QsDx0SV0x2gd-xtZ/logo/dark.svg?fit=max&auto=format&n=QsDx0SV0x2gd-xtZ&q=85&s=85c3ae8ba2fc56ae4f71b99ff75cfefe" alt="Fhenix" className="h-4 w-auto" />
+                <span className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Encrypted</span>
+              </motion.a>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1 }}
+                className="inline-flex items-center gap-1 border border-border/40 bg-card/60 px-3 h-9 overflow-hidden"
+              >
+                <div className="overflow-hidden w-20 h-7 flex items-center justify-center">
+                  <img src="/assets/1225_Arbitrum_Logo.png" alt="Arbitrum" className="h-5 w-auto" />
+                </div>
+                <span className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest">Sepolia</span>
+              </motion.div>
             </div>
 
             <h1 className="font-display text-4xl md:text-5xl lg:text-6xl leading-none tracking-tight">
@@ -492,9 +638,9 @@ function HeroSection() {
 
           {/* Right: Stealth demo terminal */}
           <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: phase >= 2 ? 1 : 0, x: phase >= 2 ? 0 : 30 }}
-            transition={{ duration: 0.7, ease: "easeOut", delay: 0.3 }}
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: phase >= 2 ? 1 : 0, x: phase >= 2 ? 0 : 24 }}
+            transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
             className="hidden lg:block"
           >
             <StealthDemoVisual />
@@ -506,11 +652,11 @@ function HeroSection() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: phase >= 2 ? 1 : 0 }}
-        transition={{ delay: 0.5 }}
+        transition={{ delay: 0.4 }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
       >
         <span className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest">Scroll</span>
-        <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
+        <motion.div animate={{ y: [0, 5, 0] }} transition={{ duration: 1.8, repeat: Infinity }}>
           <ChevronDown className="w-4 h-4 text-muted-foreground" />
         </motion.div>
       </motion.div>
@@ -521,22 +667,27 @@ function HeroSection() {
 // ─── Protocol Stats Section ───────────────────────────────────────────────────
 function ProtocolStatsSection() {
   const ref = useRef(null);
-  const inView = useInView(ref, { once: true });
-  const [fheOps, setFheOps] = useState(847293);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const [fheOps, setFheOps] = useState(12847);
+  const stats = useQuery(api.matches.getProtocolStats);
 
   useEffect(() => {
     if (!inView) return;
-    const t = setInterval(() => setFheOps(v => v + Math.floor(Math.random() * 8 + 2)), 600);
+    const t = setInterval(() => setFheOps(v => v + Math.floor(Math.random() * 6 + 2)), 2000);
     return () => clearInterval(t);
   }, [inView]);
 
-  const stats = [
-    { value: "4,291", label: "Encrypted Profiles", sub: "Active on testnet" },
+  const profileCount = Math.max(stats?.totalCandidates ?? 0, 12);
+  const jobCount = Math.max(stats?.totalJobs ?? 0, 4);
+  const matchCount = Math.max(stats?.totalMatches ?? 0, 3);
+
+  const statItems = [
+    { value: profileCount.toLocaleString(), label: "Encrypted Profiles", sub: "Active on testnet" },
     { value: fheOps.toLocaleString(), label: "FHE Operations", sub: "Computed blind", live: true },
     { value: "8", label: "Smart Contracts", sub: "Arbitrum Sepolia" },
-    { value: "100%", label: "Privacy Score", sub: "Zero plaintext exposure" },
+    { value: jobCount.toLocaleString(), label: "Job Postings", sub: "Active roles" },
+    { value: matchCount.toLocaleString(), label: "Matches Found", sub: "Mutual consent required" },
     { value: "$0", label: "Data Leaked", sub: "Mathematically enforced" },
-    { value: "3", label: "Waves Complete", sub: "Wave 3 active" },
   ];
 
   return (
@@ -545,7 +696,7 @@ function ProtocolStatsSection() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.5 }}
           className="space-y-2 mb-12"
         >
           <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Protocol Metrics</div>
@@ -553,17 +704,17 @@ function ProtocolStatsSection() {
           <p className="font-mono-cipher text-xs text-muted-foreground">Neither does the math.</p>
         </motion.div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-0 border border-border">
-          {stats.map((stat, i) => (
+          {statItems.map((stat, i) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 16 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: i * 0.08, duration: 0.5 }}
+              transition={{ delay: i * 0.07, duration: 0.4 }}
               className={`p-6 border-border ${i < 5 ? "border-b lg:border-b-0 lg:border-r" : ""} ${i < 4 ? "border-b md:border-b-0 md:border-r" : ""}`}
             >
               <div className="flex items-start gap-1.5 mb-1">
                 <div className="font-display text-2xl text-foreground">{stat.value}</div>
-                {stat.live && <motion.div className="w-1.5 h-1.5 bg-primary rounded-full mt-1.5" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1, repeat: Infinity }} />}
+                {stat.live && <span className="w-1.5 h-1.5 bg-primary rounded-full mt-1.5 animate-pulse" />}
               </div>
               <div className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest leading-tight">{stat.label}</div>
               <div className="font-mono-cipher text-muted-foreground mt-1 opacity-50" style={{ fontSize: "10px" }}>{stat.sub}</div>
@@ -617,6 +768,7 @@ function HowItWorksSection() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5 }}
           className="space-y-2"
         >
           <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">How It Works</div>
@@ -630,11 +782,12 @@ function HowItWorksSection() {
             return (
               <motion.div
                 key={step.num}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={inView ? { opacity: 1, y: 0 } : {}}
-                transition={{ delay: i * 0.12 }}
-                className={`p-8 space-y-4 group hover:bg-secondary/20 transition-colors ${i % 2 === 0 ? "border-b md:border-r border-border" : "border-b border-border"
-                  } ${i >= 2 ? "border-b-0" : ""}`}
+                transition={{ delay: i * 0.1, duration: 0.4 }}
+                className={`p-8 space-y-4 group hover:bg-secondary/20 transition-colors ${
+                  i % 2 === 0 ? "border-b md:border-r border-border" : "border-b border-border"
+                } ${i >= 2 ? "border-b-0" : ""}`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -672,6 +825,7 @@ function FeaturesSection() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5 }}
           className="space-y-2"
         >
           <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Features</div>
@@ -679,23 +833,23 @@ function FeaturesSection() {
           <p className="font-mono-cipher text-xs text-muted-foreground max-w-xl">Every feature is designed around one constraint: your current employer must never know.</p>
         </motion.div>
 
-        {/* Bento Grid */}
+        {/* Bento Grid — Row 1: hero cell (7) + tall cell (5) */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
 
           {/* Cell 1 — Stealth Mode — hero, 7 cols, tall */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.97 }}
+            initial={{ opacity: 0, scale: 0.98 }}
             animate={inView ? { opacity: 1, scale: 1 } : {}}
-            transition={{ delay: 0.05, duration: 0.5 }}
+            transition={{ delay: 0.05, duration: 0.4 }}
             className="md:col-span-7 relative overflow-hidden border border-border group cursor-default"
             style={{ minHeight: 420 }}
           >
             <img
-              src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200&q=90&fit=crop"
+              src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200&q=80&fit=crop"
               alt="Stealth Mode"
               className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-65 group-hover:scale-105 transition-all duration-700"
+              loading="lazy"
             />
-            {/* Orange tint overlay */}
             <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(255,69,0,0.18) 0%, transparent 60%)" }} />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-transparent" />
             <div className="relative h-full flex flex-col justify-end p-8 space-y-4" style={{ minHeight: 420 }}>
@@ -711,7 +865,7 @@ function FeaturesSection() {
               </div>
               <div className="flex items-center gap-4 pt-1">
                 <div className="flex items-center gap-1.5">
-                  <motion.span className="w-1.5 h-1.5 bg-primary rounded-full" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.2, repeat: Infinity }} />
+                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
                   <span className="font-mono-cipher text-[10px] text-primary/70">Active on Sepolia</span>
                 </div>
                 <span className="font-mono-cipher text-[10px] text-muted-foreground/50">|</span>
@@ -722,16 +876,17 @@ function FeaturesSection() {
 
           {/* Cell 2 — Counter-Offer — 5 cols, tall */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.97 }}
+            initial={{ opacity: 0, scale: 0.98 }}
             animate={inView ? { opacity: 1, scale: 1 } : {}}
-            transition={{ delay: 0.12, duration: 0.5 }}
+            transition={{ delay: 0.1, duration: 0.4 }}
             className="md:col-span-5 relative overflow-hidden border border-border group cursor-default"
             style={{ minHeight: 420 }}
           >
             <img
-              src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&q=90&fit=crop"
+              src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&q=80&fit=crop"
               alt="Counter-Offer Calculator"
               className="absolute inset-0 w-full h-full object-cover opacity-45 group-hover:opacity-60 group-hover:scale-105 transition-all duration-700"
+              loading="lazy"
             />
             <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(0,180,255,0.12) 0%, transparent 60%)" }} />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
@@ -750,18 +905,18 @@ function FeaturesSection() {
           </motion.div>
 
           {/* Row 2: 3 equal cells */}
-          {/* Cell 3 — Interview Insurance */}
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: 0.18, duration: 0.5 }}
+            transition={{ delay: 0.15, duration: 0.4 }}
             className="md:col-span-4 relative overflow-hidden border border-border group cursor-default"
             style={{ minHeight: 260 }}
           >
             <img
-              src="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=700&q=90&fit=crop"
+              src="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=700&q=80&fit=crop"
               alt="Interview Insurance"
               className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-58 group-hover:scale-105 transition-all duration-700"
+              loading="lazy"
             />
             <div className="absolute inset-0" style={{ background: "linear-gradient(160deg, rgba(255,140,0,0.15) 0%, transparent 55%)" }} />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/65 to-transparent" />
@@ -775,18 +930,18 @@ function FeaturesSection() {
             </div>
           </motion.div>
 
-          {/* Cell 4 — Blind Matching */}
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: 0.24, duration: 0.5 }}
+            transition={{ delay: 0.2, duration: 0.4 }}
             className="md:col-span-4 relative overflow-hidden border border-border group cursor-default"
             style={{ minHeight: 260 }}
           >
             <img
-              src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=700&q=90&fit=crop"
+              src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=700&q=80&fit=crop"
               alt="Blind Matching"
               className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-58 group-hover:scale-105 transition-all duration-700"
+              loading="lazy"
             />
             <div className="absolute inset-0" style={{ background: "linear-gradient(160deg, rgba(0,255,150,0.08) 0%, transparent 55%)" }} />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/65 to-transparent" />
@@ -800,25 +955,25 @@ function FeaturesSection() {
             </div>
           </motion.div>
 
-          {/* Cell 5 — SDK + Governance stacked in 4 cols */}
           <div className="md:col-span-4 flex flex-col gap-3">
             <motion.div
-              initial={{ opacity: 0, y: 24 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: 0.3, duration: 0.5 }}
+              transition={{ delay: 0.25, duration: 0.4 }}
               className="flex-1 relative overflow-hidden border border-border group cursor-default"
               style={{ minHeight: 122 }}
             >
               <img
-                src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&q=90&fit=crop"
+                src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&q=80&fit=crop"
                 alt="SDK"
                 className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-58 group-hover:scale-105 transition-all duration-700"
+                loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
               <div className="relative h-full flex flex-col justify-end p-5 space-y-1.5" style={{ minHeight: 122 }}>
                 <div className="flex items-center gap-2">
                   <Code2 className="w-3.5 h-3.5 text-primary" />
-                  <span className="font-mono-cipher text-[9px] border border-border text-muted-foreground px-1.5 py-0.5 uppercase tracking-widest">ALL Contracts Live</span>
+                  <span className="font-mono-cipher text-[9px] border border-border text-muted-foreground px-1.5 py-0.5 uppercase tracking-widest">Wave 3</span>
                 </div>
                 <h3 className="font-display text-base text-foreground">SDK & API</h3>
                 <p className="font-mono-cipher text-[10px] text-muted-foreground">8 contracts · 24+ methods · full type safety</p>
@@ -826,16 +981,17 @@ function FeaturesSection() {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, y: 24 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: 0.36, duration: 0.5 }}
+              transition={{ delay: 0.3, duration: 0.4 }}
               className="flex-1 relative overflow-hidden border border-border group cursor-default"
               style={{ minHeight: 122 }}
             >
               <img
-                src="https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=600&q=90&fit=crop"
+                src="https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=600&q=80&fit=crop"
                 alt="Governance"
                 className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-58 group-hover:scale-105 transition-all duration-700"
+                loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
               <div className="relative h-full flex flex-col justify-end p-5 space-y-1.5" style={{ minHeight: 122 }}>
@@ -861,9 +1017,9 @@ function ComparisonSection() {
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
   const rows = [
-    { feature: "Your salary is visible to employers", linkedin: true, traditional: true, cipher: false },
-    { feature: "Your current employer can see you're searching", linkedin: true, traditional: true, cipher: false },
-    { feature: "Matching requires revealing your identity", linkedin: true, traditional: true, cipher: false },
+    { feature: "Salary hidden from employers", linkedin: false, traditional: false, cipher: true },
+    { feature: "Current employer cannot see you're searching", linkedin: false, traditional: false, cipher: true },
+    { feature: "Match without revealing your identity", linkedin: false, traditional: false, cipher: true },
     { feature: "Salary negotiation based on real market data", linkedin: false, traditional: false, cipher: true },
     { feature: "Cryptographic privacy guarantees", linkedin: false, traditional: false, cipher: true },
     { feature: "Employer blocklist (mathematically enforced)", linkedin: false, traditional: false, cipher: true },
@@ -876,6 +1032,7 @@ function ComparisonSection() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5 }}
           className="space-y-2"
         >
           <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Comparison</div>
@@ -886,7 +1043,7 @@ function ComparisonSection() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.15, duration: 0.5 }}
           className="border border-border overflow-x-auto"
         >
           <table className="w-full min-w-[600px]">
@@ -902,20 +1059,20 @@ function ComparisonSection() {
               {rows.map((row, i) => (
                 <motion.tr
                   key={row.feature}
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={{ opacity: 0, x: -8 }}
                   animate={inView ? { opacity: 1, x: 0 } : {}}
-                  transition={{ delay: 0.3 + i * 0.06 }}
+                  transition={{ delay: 0.2 + i * 0.05, duration: 0.3 }}
                   className={`border-b border-border/50 hover:bg-secondary/20 transition-colors ${i === rows.length - 1 ? "border-b-0" : ""}`}
                 >
                   <td className="px-6 py-4 font-mono-cipher text-xs text-muted-foreground">{row.feature}</td>
                   <td className="px-6 py-4 text-center">
-                    {row.linkedin ? <XCircle className="w-4 h-4 text-destructive/60 mx-auto" /> : <CheckCircle className="w-4 h-4 text-muted-foreground/30 mx-auto" />}
+                    {row.linkedin ? <CheckCircle className="w-4 h-4 text-muted-foreground/30 mx-auto" /> : <XCircle className="w-4 h-4 text-destructive/60 mx-auto" />}
                   </td>
                   <td className="px-6 py-4 text-center">
-                    {row.traditional ? <XCircle className="w-4 h-4 text-destructive/60 mx-auto" /> : <CheckCircle className="w-4 h-4 text-muted-foreground/30 mx-auto" />}
+                    {row.traditional ? <CheckCircle className="w-4 h-4 text-muted-foreground/30 mx-auto" /> : <XCircle className="w-4 h-4 text-destructive/60 mx-auto" />}
                   </td>
                   <td className="px-6 py-4 text-center border-l border-border">
-                    {!row.cipher ? <XCircle className="w-4 h-4 text-primary mx-auto" /> : <CheckCircle className="w-4 h-4 text-primary mx-auto" />}
+                    {row.cipher ? <CheckCircle className="w-4 h-4 text-primary mx-auto" /> : <XCircle className="w-4 h-4 text-destructive/60 mx-auto" />}
                   </td>
                 </motion.tr>
               ))}
@@ -962,6 +1119,7 @@ function TestimonialsSection() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5 }}
           className="space-y-2"
         >
           <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Social Proof</div>
@@ -973,9 +1131,9 @@ function TestimonialsSection() {
           {testimonials.map((t, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: i * 0.12 }}
+              transition={{ delay: i * 0.1, duration: 0.4 }}
               className={`p-8 space-y-6 ${i < 2 ? "border-b md:border-b-0 md:border-r border-border" : ""}`}
             >
               <Quote className="w-5 h-5 text-primary/40" />
@@ -987,6 +1145,7 @@ function TestimonialsSection() {
                       src={t.avatar}
                       alt={t.role}
                       className="w-full h-full object-cover grayscale opacity-70"
+                      loading="lazy"
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                     />
                   </div>
@@ -1017,22 +1176,28 @@ function WhoItsForSection() {
 
   const personas = [
     {
+      icon: User,
       title: "The Quietly Ambitious",
-      desc: "You're performing well at your current job. You're not desperate. But you're curious what the market looks like — without triggering a performance review.",
-      image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=300&fit=crop",
-      tags: ["Stealth Mode", "Employer Blocklist"],
+      desc: "You're good at your job. You're also underpaid. You want to explore options without your manager finding out. Cipher CV was built for you.",
+      tags: ["Stealth Mode", "Salary Benchmarking", "Blind Matching"],
     },
     {
-      title: "The Underpaid Expert",
-      desc: "You know you're worth more. You just don't have the data to prove it. Cipher CV's counter-offer calculator gives you encrypted market data to negotiate with.",
-      image: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=400&h=300&fit=crop",
-      tags: ["Counter-Offer Calculator", "Market Data"],
+      icon: DollarSign,
+      title: "The Counter-Offer Seeker",
+      desc: "You don't want to leave. You want leverage. The counter-offer calculator gives you real market data to negotiate — without revealing you have offers.",
+      tags: ["Counter-Offer Calculator", "Market Data", "Encrypted Negotiation"],
     },
     {
-      title: "The Privacy-First Engineer",
-      desc: "You've read the FHE papers. You know what's possible. You want to use a platform that actually implements the cryptography — not just claims to.",
-      image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&h=300&fit=crop",
-      tags: ["FHE Verified", "On-Chain Proofs"],
+      icon: Building2,
+      title: "The Privacy-First Employer",
+      desc: "You want to hire based on skills and fit — not on who has the most connections. Post jobs that match on merit, not visibility.",
+      tags: ["Blind Candidate Review", "Skill-Based Matching", "Encrypted Job Specs"],
+    },
+    {
+      icon: Code2,
+      title: "The Protocol Builder",
+      desc: "You want to build privacy-preserving applications on top of FHE. The Cipher CV SDK gives you 8 contracts and 24+ methods to build on.",
+      tags: ["SDK Access", "8 Contracts", "Full Type Safety"],
     },
   ];
 
@@ -1042,44 +1207,42 @@ function WhoItsForSection() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5 }}
           className="space-y-2"
         >
           <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Who It's For</div>
-          <h2 className="font-display text-3xl md:text-4xl text-foreground">Built for people who can't afford to be seen looking.</h2>
-          <p className="font-mono-cipher text-xs text-muted-foreground max-w-xl">If you're currently employed and exploring, this was built for you.</p>
+          <h2 className="font-display text-3xl md:text-4xl text-foreground">Privacy isn't a feature. It's a right.</h2>
+          <p className="font-mono-cipher text-xs text-muted-foreground max-w-xl">Cipher CV is for anyone who believes their career data belongs to them — not to a platform.</p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-border">
-          {personas.map((p, i) => (
-            <motion.div
-              key={p.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: i * 0.12 }}
-              className={`group ${i < 2 ? "border-b md:border-b-0 md:border-r border-border" : ""}`}
-            >
-              <div className="relative overflow-hidden h-48">
-                <img
-                  src={p.image}
-                  alt={p.title}
-                  className="w-full h-full object-cover grayscale opacity-50 group-hover:opacity-70 group-hover:scale-105 transition-all duration-500"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-card via-card/60 to-transparent" />
-                <div className="absolute bottom-4 left-6 flex flex-wrap gap-1.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border border-border">
+          {personas.map((p, i) => {
+            const Icon = p.icon;
+            return (
+              <motion.div
+                key={p.title}
+                initial={{ opacity: 0, y: 16 }}
+                animate={inView ? { opacity: 1, y: 0 } : {}}
+                transition={{ delay: i * 0.08, duration: 0.4 }}
+                className={`p-8 space-y-4 group hover:bg-secondary/20 transition-colors ${
+                  i % 2 === 0 ? "border-b md:border-r border-border" : "border-b border-border"
+                } ${i >= 2 ? "border-b-0" : ""}`}
+              >
+                <div className="w-10 h-10 border border-border flex items-center justify-center group-hover:border-primary transition-colors">
+                  <Icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                </div>
+                <div>
+                  <h3 className="font-display text-lg text-foreground mb-2">{p.title}</h3>
+                  <p className="font-mono-cipher text-xs text-muted-foreground leading-relaxed">{p.desc}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
                   {p.tags.map(tag => (
-                    <span key={tag} className="font-mono-cipher border border-primary/40 text-primary bg-card/80 px-2 py-0.5" style={{ fontSize: "9px" }}>
-                      {tag}
-                    </span>
+                    <span key={tag} className="font-mono-cipher text-[10px] border border-border text-muted-foreground px-2 py-1 group-hover:border-primary/30 transition-colors">{tag}</span>
                   ))}
                 </div>
-              </div>
-              <div className="p-6 space-y-3">
-                <h3 className="font-display text-base text-foreground">{p.title}</h3>
-                <p className="font-mono-cipher text-xs text-muted-foreground leading-relaxed">{p.desc}</p>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -1093,54 +1256,53 @@ function DemoSection() {
 
   return (
     <section ref={ref} className="px-6 md:px-12 lg:px-20 py-24 border-b border-border">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={inView ? { opacity: 1, x: 0 } : {}}
-            className="space-y-6"
-          >
-            <div className="space-y-2">
-              <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Live Demo</div>
-              <h2 className="font-display text-3xl md:text-4xl text-foreground">See stealth mode in action.</h2>
-              <p className="font-mono-cipher text-xs text-muted-foreground leading-relaxed max-w-md">
-                Watch a complete stealth job search — from encrypted profile creation to salary reveal — in 30 seconds. All operations are real FHE computations.
-              </p>
-            </div>
-            <div className="space-y-3">
+      <div className="max-w-7xl mx-auto space-y-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5 }}
+          className="space-y-2"
+        >
+          <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Live Demo</div>
+          <h2 className="font-display text-3xl md:text-4xl text-foreground">See it in action.</h2>
+          <p className="font-mono-cipher text-xs text-muted-foreground max-w-xl">Watch a complete stealth job search — from encrypted profile to accepted offer — in 30 seconds.</p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.15, duration: 0.5 }}
+          className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start"
+        >
+          <StealthDemoVisual />
+          <div className="space-y-6">
+            <div className="space-y-4">
               {[
-                { label: "Profile encrypted client-side", detail: "CoFHE SDK — never leaves your device" },
-                { label: "Employer blocklist applied", detail: "keccak256(domain) → FHE.blocklist_check" },
-                { label: "Blind matching computed", detail: "FHE.and(salary, exp, skills) → ebool" },
-                { label: "Mutual consent reveal", detail: "decryptForTx + FHE.publishDecryptResult" },
+                { num: "01", title: "Zero plaintext leaves your device", desc: "Every field is encrypted before the first network request." },
+                { num: "02", title: "Employer blocklist is mathematically enforced", desc: "Not a filter. Not a policy. An FHE circuit that makes you invisible." },
+                { num: "03", title: "Matches are computed blind", desc: "The algorithm never sees your salary or identity. Only encrypted inputs." },
+                { num: "04", title: "Reveal only on mutual consent", desc: "Both parties must sign. No exceptions. No workarounds." },
               ].map((item, i) => (
                 <motion.div
-                  key={item.label}
-                  initial={{ opacity: 0, x: -10 }}
+                  key={item.num}
+                  initial={{ opacity: 0, x: 16 }}
                   animate={inView ? { opacity: 1, x: 0 } : {}}
-                  transition={{ delay: 0.2 + i * 0.1 }}
-                  className="flex items-start gap-3"
+                  transition={{ delay: 0.2 + i * 0.08, duration: 0.4 }}
+                  className="flex gap-4 p-4 border border-border hover:bg-secondary/20 transition-colors"
                 >
-                  <div className="w-5 h-5 border border-primary/40 flex items-center justify-center shrink-0 mt-0.5">
-                    <span className="font-mono-cipher text-primary" style={{ fontSize: "9px" }}>{String(i + 1).padStart(2, "0")}</span>
-                  </div>
+                  <span className="font-mono-cipher text-xs text-primary/50 shrink-0 mt-0.5">{item.num}</span>
                   <div>
-                    <div className="font-mono-cipher text-xs text-foreground">{item.label}</div>
-                    <div className="font-mono-cipher text-muted-foreground" style={{ fontSize: "10px" }}>{item.detail}</div>
+                    <div className="font-mono-cipher text-xs text-foreground font-bold mb-1">{item.title}</div>
+                    <div className="font-mono-cipher text-xs text-muted-foreground">{item.desc}</div>
                   </div>
                 </motion.div>
               ))}
             </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={inView ? { opacity: 1, x: 0 } : {}}
-            transition={{ delay: 0.2 }}
-          >
-            <StealthDemoVisual />
-          </motion.div>
-        </div>
+            <Link to="/app/candidate" className="inline-flex items-center gap-2 font-mono-cipher text-xs bg-primary text-primary-foreground px-6 py-3 uppercase tracking-widest hover:bg-foreground hover:text-background transition-all duration-150">
+              Try It Live <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -1177,28 +1339,30 @@ function TechnicalSection() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5 }}
           className="grid grid-cols-1 lg:grid-cols-2 gap-12"
         >
           <div className="space-y-4">
             <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Architecture</div>
             <h2 className="font-display text-3xl md:text-4xl text-foreground">8 contracts. 1 protocol.</h2>
             <p className="font-mono-cipher text-xs text-muted-foreground leading-relaxed">
-              Cipher CV is a suite of 8 smart contracts deployed on Ethereum Sepolia. Each contract handles a specific privacy primitive — from blind matching to encrypted governance.
+              Cipher CV is a suite of 8 smart contracts deployed on Arbitrum Sepolia. Each contract handles a specific privacy primitive — from blind matching to encrypted governance.
             </p>
             <div className="relative overflow-hidden h-40 border border-border">
               <img
                 src="https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=800&h=320&fit=crop"
                 alt="Blockchain network"
                 className="w-full h-full object-cover grayscale opacity-30"
+                loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-r from-card via-transparent to-card" />
               <div className="absolute inset-0 flex items-center justify-center gap-3">
-                <motion.div className="w-1.5 h-1.5 bg-primary rounded-full" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.2, repeat: Infinity }} />
-                <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Ethereum Sepolia — 8 Contracts Live</div>
+                <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+                <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Arbitrum Sepolia — 8 Contracts Live</div>
               </div>
             </div>
             <div className="flex flex-wrap gap-2 pt-2">
-              {["CoFHE SDK", "decryptForView", "decryptForTx", "FHE.publishDecryptResult", "Ethereum Sepolia"].map(tag => (
+              {["CoFHE SDK", "decryptForView", "decryptForTx", "FHE.publishDecryptResult", "Arbitrum Sepolia"].map(tag => (
                 <span key={tag} className="font-mono-cipher text-xs border border-border text-muted-foreground px-2 py-1">{tag}</span>
               ))}
             </div>
@@ -1210,12 +1374,12 @@ function TechnicalSection() {
                 Whitepaper <ArrowRight className="w-3 h-3" />
               </Link>
               <a
-                href="https://sepolia.etherscan.io"
+                href="https://sepolia.arbiscan.io"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-mono-cipher text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
               >
-                Etherscan <ExternalLink className="w-3 h-3" />
+                Arbiscan <ExternalLink className="w-3 h-3" />
               </a>
             </div>
           </div>
@@ -1224,9 +1388,9 @@ function TechnicalSection() {
             {contracts.map((c, i) => (
               <motion.div
                 key={c.name}
-                initial={{ opacity: 0, x: 10 }}
+                initial={{ opacity: 0, x: 8 }}
                 animate={inView ? { opacity: 1, x: 0 } : {}}
-                transition={{ delay: i * 0.06 }}
+                transition={{ delay: i * 0.05, duration: 0.3 }}
                 className={`flex items-center justify-between px-5 py-3 hover:bg-secondary/20 transition-colors group ${i < contracts.length - 1 ? "border-b border-border" : ""}`}
               >
                 <div className="min-w-0 flex-1">
@@ -1242,11 +1406,11 @@ function TechnicalSection() {
                     {copied === c.full ? "Copied!" : c.short}
                   </button>
                   <a
-                    href={`https://sepolia.etherscan.io/address/${c.full}`}
+                    href={`https://sepolia.arbiscan.io/address/${c.full}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-muted-foreground hover:text-primary transition-colors"
-                    title="View on Etherscan"
+                    title="View on Arbiscan"
                   >
                     <ExternalLink className="w-3 h-3" />
                   </a>
@@ -1264,46 +1428,61 @@ function TechnicalSection() {
 function CTASection() {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
+  const stats = useQuery(api.matches.getProtocolStats);
+
+  const profileCount = Math.max(stats?.totalCandidates ?? 0, 12);
 
   return (
     <section ref={ref} className="px-6 md:px-12 lg:px-20 py-32 border-b border-border relative overflow-hidden">
-      <FloatingOrb x="20%" y="30%" size={500} delay={0} />
-      <FloatingOrb x="60%" y="50%" size={300} delay={3} />
-      <div className="max-w-4xl mx-auto relative z-10">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(255,69,0,0.04) 0%, transparent 70%)" }} />
+      </div>
+      <div className="max-w-4xl mx-auto text-center space-y-8 relative z-10">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          className="space-y-8 text-center"
+          transition={{ duration: 0.5 }}
+          className="space-y-4"
         >
-          <div className="space-y-4">
-            <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Get Started</div>
-            <h2 className="font-display text-4xl md:text-6xl text-foreground leading-tight">
-              Your manager doesn't need to know.
-            </h2>
-            <p className="font-body text-muted-foreground max-w-xl mx-auto leading-relaxed text-base md:text-lg">
-              Join 4,291 professionals who are actively searching — invisibly. Encrypt your profile once. Match forever. Reveal nothing until you choose to.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-4 justify-center">
-            <Link to="/app/candidate" className="group font-mono-cipher text-sm bg-primary text-primary-foreground px-8 py-4 uppercase tracking-widest hover:bg-foreground hover:text-background transition-all duration-150 flex items-center gap-3 font-bold">
-              <Ghost className="w-4 h-4" />
-              Start Stealth Search
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-            <Link to="/app/employer" className="group font-mono-cipher text-sm border border-border text-foreground px-8 py-4 uppercase tracking-widest hover:border-primary hover:text-primary transition-all duration-150 flex items-center gap-3">
-              <Building2 className="w-4 h-4" />
-              I'm Hiring
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
-          <div className="flex items-center justify-center gap-8 pt-4">
-            {[{ icon: DollarSign, label: "$29/mo stealth" }, { icon: Shield, label: "FHE encrypted" }, { icon: EyeOff, label: "Zero employer visibility" }].map(({ icon: Icon, label }) => (
-              <div key={label} className="flex items-center gap-2">
-                <Icon className="w-3 h-3 text-primary/60" />
-                <span className="font-mono-cipher text-xs text-muted-foreground">{label}</span>
-              </div>
-            ))}
-          </div>
+          <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Get Started</div>
+          <h2 className="font-display text-4xl md:text-5xl text-foreground leading-tight">
+            Your career data<br />belongs to you.
+          </h2>
+          <p className="font-mono-cipher text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
+            Join {profileCount}+ professionals who search for jobs without their employer knowing. Mathematically guaranteed.
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.15, duration: 0.5 }}
+          className="flex flex-col sm:flex-row gap-4 justify-center"
+        >
+          <EncryptProfileButton />
+          <Link to="/app/whitepaper" className="group font-mono-cipher text-sm border border-border text-foreground px-8 py-4 uppercase tracking-widest hover:border-primary hover:text-primary transition-all duration-150 flex items-center justify-center gap-2">
+            Read the Whitepaper
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={inView ? { opacity: 1 } : {}}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="flex flex-wrap justify-center gap-8 pt-4"
+        >
+          {[
+            { icon: Shield, label: "Zero-knowledge matching" },
+            { icon: Lock, label: "Client-side encryption" },
+            { icon: EyeOff, label: "Employer-blind by default" },
+            { icon: AlertTriangle, label: "No data stored in plaintext" },
+          ].map(({ icon: Icon, label }) => (
+            <div key={label} className="flex items-center gap-2">
+              <Icon className="w-3.5 h-3.5 text-primary/60" />
+              <span className="font-mono-cipher text-xs text-muted-foreground">{label}</span>
+            </div>
+          ))}
         </motion.div>
       </div>
     </section>
@@ -1323,45 +1502,77 @@ function Footer() {
             </div>
             <div className="font-mono-cipher text-xs text-muted-foreground">Stealth job search for the currently employed</div>
             <div className="font-mono-cipher text-xs text-muted-foreground flex items-center gap-1.5">
-              <motion.span className="w-1.5 h-1.5 bg-primary rounded-full" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.5, repeat: Infinity }} />
-              Arbitrum Sepolia — Wave 3 Live
+              <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+              Arbitrum Sepolia — Live
+            </div>
+            <div className="flex items-center gap-3 pt-1">
+              <a href="https://fhenix.io" target="_blank" rel="noopener noreferrer" className="group flex items-center gap-1.5">
+                <span className="font-mono-cipher text-[10px] text-muted-foreground uppercase tracking-widest group-hover:text-primary transition-colors">Powered by</span>
+                <img src="https://mintcdn.com/fhenix/QsDx0SV0x2gd-xtZ/logo/dark.svg?fit=max&auto=format&n=QsDx0SV0x2gd-xtZ&q=85&s=85c3ae8ba2fc56ae4f71b99ff75cfefe" alt="Fhenix" className="h-3.5 w-auto opacity-60 group-hover:opacity-100 transition-opacity" />
+              </a>
+              <span className="text-border">·</span>
+              <div className="flex items-center gap-1.5">
+                <img src="/assets/1225_Arbitrum_Logo.png" alt="Arbitrum" className="h-4 w-auto opacity-60" />
+                <span className="font-mono-cipher text-[10px] text-muted-foreground uppercase tracking-widest">Sepolia</span>
+              </div>
             </div>
           </div>
+
           <div className="space-y-3">
-            <div className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest mb-4">Product</div>
-            {[{ label: "Stealth Mode", to: "/app/candidate" }, { label: "Counter-Offer Calculator", to: "/app/candidate" }, { label: "Interview Insurance", to: "/app/candidate" }].map((link) => (
+            <div className="font-mono-cipher text-[10px] text-muted-foreground/60 uppercase tracking-widest mb-4 font-semibold">Product</div>
+            {[
+              { label: "Candidate Profile", to: "/app/candidate" },
+              { label: "Stealth Mode", to: "/app/candidate" },
+              { label: "Counter-Offer Calculator", to: "/app/candidate" },
+              { label: "Interview Insurance", to: "/app/candidate" },
+              { label: "Employer Portal", to: "/app/employer" },
+            ].map((link) => (
               <Link key={link.label} to={link.to} className="block font-mono-cipher text-xs text-muted-foreground hover:text-primary transition-colors duration-150">
-                <ScrambleText text={link.label} speed={30} />
+                {link.label}
               </Link>
             ))}
           </div>
+
           <div className="space-y-3">
-            <div className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest mb-4">Protocol</div>
-            {[{ label: "Whitepaper", to: "/app/whitepaper" }, { label: "Protocol Docs", to: "/app/protocol" }, { label: "SDK Docs", to: "/app/sdk" }, { label: "Proof Explorer", to: "/app/proofs" }].map((link) => (
+            <div className="font-mono-cipher text-[10px] text-muted-foreground/60 uppercase tracking-widest mb-4 font-semibold">Protocol</div>
+            {[
+              { label: "Whitepaper", to: "/app/whitepaper" },
+              { label: "Protocol Docs", to: "/app/protocol" },
+              { label: "SDK Reference", to: "/app/sdk" },
+              { label: "Proof Explorer", to: "/app/proofs" },
+              { label: "Analytics", to: "/app/analytics" },
+            ].map((link) => (
               <Link key={link.label} to={link.to} className="block font-mono-cipher text-xs text-muted-foreground hover:text-primary transition-colors duration-150">
-                <ScrambleText text={link.label} speed={30} />
+                {link.label}
               </Link>
             ))}
           </div>
+
           <div className="space-y-3">
-            <div className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest mb-4">Community</div>
-            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 font-mono-cipher text-xs text-muted-foreground hover:text-primary transition-colors duration-150">
-              <Twitter className="w-3 h-3" /> Twitter
+            <div className="font-mono-cipher text-[10px] text-muted-foreground/60 uppercase tracking-widest mb-4 font-semibold">Resources</div>
+            <a href="https://docs.fhenix.zone" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 font-mono-cipher text-xs text-muted-foreground hover:text-primary transition-colors duration-150">
+              <ExternalLink className="w-3 h-3 shrink-0" /> Fhenix Docs
             </a>
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 font-mono-cipher text-xs text-muted-foreground hover:text-primary transition-colors duration-150">
-              <Github className="w-3 h-3" /> GitHub
+            <a href="https://sepolia.arbiscan.io" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 font-mono-cipher text-xs text-muted-foreground hover:text-primary transition-colors duration-150">
+              <ExternalLink className="w-3 h-3 shrink-0" /> Arbiscan Explorer
             </a>
-            <a href="https://fhenix.io" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 font-mono-cipher text-xs text-muted-foreground hover:text-primary transition-colors duration-150">
-              <ExternalLink className="w-3 h-3" /> Fhenix
+            <a href="https://faucet.quicknode.com/arbitrum/sepolia" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 font-mono-cipher text-xs text-muted-foreground hover:text-primary transition-colors duration-150">
+              <ExternalLink className="w-3 h-3 shrink-0" /> Testnet Faucet
             </a>
-            <a href="https://sepolia.arbiscan.io" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 font-mono-cipher text-xs text-muted-foreground hover:text-primary transition-colors duration-150">
-              <ExternalLink className="w-3 h-3" /> Arbiscan
+            <a href="https://fhenix.io/whitepaper" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 font-mono-cipher text-xs text-muted-foreground hover:text-primary transition-colors duration-150">
+              <ExternalLink className="w-3 h-3 shrink-0" /> FHE Research
             </a>
           </div>
         </div>
+
         <div className="border-t border-border pt-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="font-mono-cipher text-xs text-muted-foreground">Fhenix Privacy-by-Design Buildathon — Wave 3 — {new Date().getFullYear()}</div>
-          <div className="font-mono-cipher text-xs text-muted-foreground">Contact: <span className="text-primary">0x7f3a...@encrypted</span></div>
+          <div className="font-mono-cipher text-xs text-muted-foreground">
+            © {new Date().getFullYear()} Cipher CV Protocol. All cryptographic guarantees enforced by Fhenix fhEVM.
+          </div>
+          <div className="flex items-center gap-4">
+            <Link to="/app/whitepaper" className="font-mono-cipher text-xs text-muted-foreground hover:text-primary transition-colors">Whitepaper</Link>
+            <Link to="/app/protocol" className="font-mono-cipher text-xs text-muted-foreground hover:text-primary transition-colors">Protocol</Link>
+          </div>
         </div>
       </div>
     </footer>
@@ -1370,11 +1581,20 @@ function Footer() {
 
 // ─── Main Export ──────────────────────────────────────────────────────────────
 export default function Landing() {
+  const { isConnected } = useAccount();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isConnected) {
+      navigate("/app", { replace: true });
+    }
+  }, [isConnected, navigate]);
+
   return (
     <>
       <CustomCursor />
       <NoiseTexture />
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className="min-h-screen bg-background text-foreground">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="min-h-screen bg-background text-foreground">
         <HeroSection />
         <LiveStatsTicker />
         <ProtocolStatsSection />

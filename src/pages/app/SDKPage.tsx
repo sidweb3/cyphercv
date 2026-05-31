@@ -276,7 +276,7 @@ export default function SDKPage() {
         {/* Header */}
         <div className="space-y-1">
           <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">
-            SDK — Wave 3
+            SDK
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground" style={{ fontFamily: "Space Grotesk" }}>
             @cipher-cv/sdk
@@ -291,7 +291,7 @@ export default function SDKPage() {
           <div className="flex items-center gap-3">
             <Package className="w-4 h-4 text-primary" />
             <div>
-              <div className="font-mono-cipher text-xs text-primary">@cipher-cv/sdk — Wave 3 Internal Release</div>
+              <div className="font-mono-cipher text-xs text-primary">@cipher-cv/sdk — v3.0</div>
               <div className="font-mono-cipher text-muted-foreground mt-0.5" style={{ fontSize: "10px" }}>
                 Arbitrum Sepolia · 8 contracts · decryptForView / decryptForTx
               </div>

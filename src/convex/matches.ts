@@ -8,7 +8,7 @@ export const requestMatch = mutation({
     employerWallet: v.string(),
     candidateProfileId: v.id("encryptedProfiles"),
     jobPostingId: v.id("jobPostings"),
-    // Simulated FHE result (Wave 2 mock — real FHE in Wave 3)
+    // Simulated FHE result (commitment hash — real FHE on Fhenix)
     score: v.number(),
     compatible: v.boolean(),
     suggestedSalary: v.optional(v.number()),

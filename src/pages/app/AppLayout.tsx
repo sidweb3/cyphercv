@@ -428,18 +428,20 @@ export function AppLayout({ children, publicAccess }: { children: React.ReactNod
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 py-4 border-b border-border overflow-hidden">
-          <img src="/assets/cypher.jpg" alt="Cipher CV" className="w-6 h-6 object-cover shrink-0" />
+          <img src="/assets/cypher.jpg" alt="Cipher CV" className="w-6 h-6 object-cover shrink-0 ring-1 ring-border" />
           <AnimatePresence>
             {!collapsed && (
-              <motion.span
+              <motion.div
                 initial={{ opacity: 0, width: 0 }}
                 animate={{ opacity: 1, width: "auto" }}
                 exit={{ opacity: 0, width: 0 }}
-                className="font-bold text-sm uppercase tracking-widest whitespace-nowrap overflow-hidden"
-                style={{ fontFamily: "Space Grotesk" }}
+                className="overflow-hidden whitespace-nowrap"
               >
-                Cipher CV
-              </motion.span>
+                <div className="font-bold text-sm uppercase tracking-widest" style={{ fontFamily: "Space Grotesk" }}>
+                  Cipher CV
+                </div>
+                <div className="font-mono-cipher text-[9px] text-muted-foreground/50 uppercase tracking-widest">Protocol</div>
+              </motion.div>
             )}
           </AnimatePresence>
         </div>
@@ -470,10 +472,9 @@ export function AppLayout({ children, publicAccess }: { children: React.ReactNod
           {!collapsed && (
             <div className="px-4 py-3 space-y-1">
               <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse shrink-0" />
-                <span className="text-[11px] font-medium text-muted-foreground">Arbitrum Sepolia</span>
+                <img src="/assets/1225_Arbitrum_Logo.png" alt="Arbitrum" className="h-6 w-auto object-contain shrink-0 opacity-90" />
               </div>
-              <div className="text-[10px] text-muted-foreground/60 font-medium">Wave 3 · 8 contracts live</div>
+              <div className="text-[10px] text-muted-foreground/60 font-medium">Sepolia · 8 contracts live</div>
             </div>
           )}
           <button
@@ -521,8 +522,7 @@ export function AppLayout({ children, publicAccess }: { children: React.ReactNod
             </nav>
             <div className="border-t border-border px-4 py-3">
               <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
-                <span className="text-[11px] font-medium text-muted-foreground">Arbitrum Sepolia · Wave 3</span>
+                <img src="/assets/1225_Arbitrum_Logo.png" alt="Arbitrum" className="h-6 w-auto object-contain shrink-0 opacity-90" />
               </div>
             </div>
           </motion.aside>
@@ -532,17 +532,20 @@ export function AppLayout({ children, publicAccess }: { children: React.ReactNod
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <header className="flex items-center justify-between px-6 py-3.5 border-b border-border bg-card shrink-0">
+        <header className="flex items-center justify-between px-6 py-3 border-b border-border bg-card shrink-0">
           <div className="flex items-center gap-3">
-            <button onClick={() => setMobileOpen(true)} className="md:hidden text-muted-foreground hover:text-foreground">
+            <button onClick={() => setMobileOpen(true)} className="md:hidden text-muted-foreground hover:text-foreground p-1">
               <Menu className="w-4 h-4" />
             </button>
-            <span className="text-sm font-semibold text-foreground">{currentLabel}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-muted-foreground/50 hidden sm:block">/</span>
+              <span className="text-sm font-semibold text-foreground">{currentLabel}</span>
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="text-xs font-medium text-muted-foreground hidden sm:flex items-center gap-1.5 border border-border px-2.5 py-1.5">
-              <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
-              Arb Sepolia
+            <div className="hidden sm:flex items-center gap-1.5 border border-border/60 px-2.5 py-1.5 bg-background/50">
+              <img src="/assets/1225_Arbitrum_Logo.png" alt="Arbitrum" className="h-5 w-auto object-contain opacity-80" />
+              <span className="font-mono-cipher text-[10px] text-muted-foreground/60 uppercase tracking-widest hidden md:block">Sepolia</span>
             </div>
             <ThemeToggle compact />
             <NotificationCenter />

@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AppLayout } from "./AppLayout";
 import { generateHash } from "@/lib/demoData";
 import { isContractDeployed } from "@/lib/fhenix";
 import { onChainCastVote, onChainCreateProposal } from "@/lib/contract-calls";
-import { Vote, CheckCircle, Clock, XCircle, Users, Zap, Shield, ChevronDown, ChevronUp, Plus } from "lucide-react";
+import { Vote, CheckCircle, Clock, XCircle, ChevronDown, ChevronUp, Plus } from "lucide-react";
 import { useAccount, useConnect, useConnectorClient, usePublicClient } from "wagmi";
 import { toast } from "sonner";
 import { useQuery, useMutation } from "convex/react";
@@ -34,6 +34,7 @@ function ProposalCard({
   proposal,
   myVote,
   onVote,
+  voting,
 }: {
   proposal: {
     _id: string;
@@ -50,22 +51,15 @@ function ProposalCard({
   };
   myVote: { vote: "for" | "against" } | null | undefined;
   onVote: (proposalId: string, vote: "for" | "against") => void;
+  voting: string | null; // proposalId currently being voted on
 }) {
   const [expanded, setExpanded] = useState(false);
-  const [voting, setVoting] = useState<"for" | "against" | null>(null);
 
   const total = proposal.votesFor + proposal.votesAgainst;
   const forPct = total > 0 ? (proposal.votesFor / total) * 100 : 50;
   const quorumPct = Math.min(100, (total / proposal.quorum) * 100);
   const daysLeft = Math.max(0, Math.ceil((proposal.endsAt - Date.now()) / 86400000));
-
-  const handleVote = async (vote: "for" | "against") => {
-    if (proposal.status !== "active" || myVote) return;
-    setVoting(vote);
-    await new Promise(r => setTimeout(r, 1200));
-    onVote(proposal.proposalId, vote);
-    setVoting(null);
-  };
+  const isVoting = voting === proposal.proposalId;
 
   const statusIcon = () => {
     if (proposal.status === "active") return <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />;
@@ -97,6 +91,9 @@ function ProposalCard({
                 </span>
                 {proposal.status === "active" && (
                   <span className="font-mono-cipher text-primary" style={{ fontSize: "10px" }}>{daysLeft}d remaining</span>
+                )}
+                {proposal.status === "pending" && (
+                  <span className="font-mono-cipher text-muted-foreground" style={{ fontSize: "10px" }}>Pending activation</span>
                 )}
               </div>
             </div>
@@ -149,21 +146,21 @@ function ProposalCard({
               {proposal.status === "active" && !myVote && (
                 <div className="flex gap-3">
                   <motion.button
-                    onClick={() => handleVote("for")}
-                    disabled={!!voting}
+                    onClick={e => { e.stopPropagation(); onVote(proposal.proposalId, "for"); }}
+                    disabled={isVoting}
                     whileTap={{ scale: 0.97 }}
                     className="flex-1 py-3 border border-primary text-primary font-mono-cipher text-xs uppercase tracking-widest hover:bg-primary hover:text-primary-foreground transition-all duration-100 disabled:opacity-50 flex items-center justify-center gap-2"
                   >
-                    {voting === "for" ? <span className="animate-pulse">▋</span> : <CheckCircle className="w-3 h-3" />}
+                    {isVoting ? <span className="animate-pulse">▋</span> : <CheckCircle className="w-3 h-3" />}
                     Vote For
                   </motion.button>
                   <motion.button
-                    onClick={() => handleVote("against")}
-                    disabled={!!voting}
+                    onClick={e => { e.stopPropagation(); onVote(proposal.proposalId, "against"); }}
+                    disabled={isVoting}
                     whileTap={{ scale: 0.97 }}
                     className="flex-1 py-3 border border-border text-muted-foreground font-mono-cipher text-xs uppercase tracking-widest hover:border-destructive hover:text-destructive transition-all duration-100 disabled:opacity-50 flex items-center justify-center gap-2"
                   >
-                    {voting === "against" ? <span className="animate-pulse">▋</span> : <XCircle className="w-3 h-3" />}
+                    {isVoting ? <span className="animate-pulse">▋</span> : <XCircle className="w-3 h-3" />}
                     Vote Against
                   </motion.button>
                 </div>
@@ -176,7 +173,14 @@ function ProposalCard({
                 </div>
               )}
 
-              {proposal.status !== "active" && (
+              {proposal.status === "pending" && (
+                <div className="border border-border p-3 font-mono-cipher text-xs text-muted-foreground flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5" />
+                  This proposal is pending activation — voting opens soon
+                </div>
+              )}
+
+              {(proposal.status === "passed" || proposal.status === "rejected") && (
                 <div className={`border p-3 font-mono-cipher text-xs flex items-center gap-2 ${
                   proposal.status === "passed" ? "border-primary/30 bg-primary/5 text-primary" : "border-border text-muted-foreground"
                 }`}>
@@ -197,10 +201,12 @@ function ProposalCardWithVote({
   proposal,
   voterWallet,
   onVote,
+  voting,
 }: {
   proposal: any;
   voterWallet: string;
   onVote: (proposalId: string, vote: "for" | "against") => void;
+  voting: string | null;
 }) {
   const myVote = useQuery(
     api.governance.getMyVote,
@@ -212,6 +218,7 @@ function ProposalCardWithVote({
       proposal={proposal}
       myVote={myVote ?? null}
       onVote={onVote}
+      voting={voting}
     />
   );
 }
@@ -220,12 +227,14 @@ export default function GovernancePage() {
   const { address, isConnected, chainId } = useAccount();
   const { data: connectorClient } = useConnectorClient();
   const publicClient = usePublicClient();
-  const [filter, setFilter] = useState<"all" | "active" | "passed" | "rejected">("all");
+  const [filter, setFilter] = useState<"all" | "active" | "passed" | "rejected" | "pending">("all");
   const [showNewProposal, setShowNewProposal] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newCategory, setNewCategory] = useState<"parameter" | "upgrade" | "treasury" | "emergency">("parameter");
   const [submitting, setSubmitting] = useState(false);
+  const [votingProposalId, setVotingProposalId] = useState<string | null>(null);
+  const seeded = useRef(false);
 
   const proposals = useQuery(api.governance.getProposals);
   const seedProposals = useMutation(api.governance.seedProposals);
@@ -233,32 +242,28 @@ export default function GovernancePage() {
   const submitProposal = useMutation(api.governance.submitProposal);
   const createNotification = useMutation(api.notifications.createNotification);
 
-  // Seed proposals on first load
-  useEffect(() => {
+  // Seed proposals exactly once
+  if (!seeded.current && proposals !== undefined && proposals.length === 0) {
+    seeded.current = true;
     seedProposals();
-  }, []);
-
-  // Get my votes for all proposals
-  const myVotes = useQuery(
-    api.governance.getProposals,
-    // We'll handle per-proposal votes inline
-  );
+  }
 
   const handleVote = async (proposalId: string, vote: "for" | "against") => {
-    if (!address) return;
+    if (!address || votingProposalId) return;
+    setVotingProposalId(proposalId);
     try {
-      // Try real on-chain vote on Arbitrum Sepolia
+      // Try real on-chain vote on Arbitrum/Ethereum Sepolia
       const isOnChainNetwork = (chainId === 421614 || chainId === 11155111) && isContractDeployed("CipherGovernance");
       if (isOnChainNetwork && connectorClient && publicClient) {
         toast.info("Casting encrypted vote on-chain...");
         try {
-          // proposalId is a Convex ID string — use index from proposals list
-          const proposals = await new Promise<any[]>(resolve => resolve([])); // will use existing proposals state
+          // Find proposal index in the list for on-chain ID
+          const proposalIndex = (proposals ?? []).findIndex(p => p.proposalId === proposalId);
           const { hash, explorerUrl } = await onChainCastVote(
             connectorClient as any,
             publicClient as any,
             {
-              proposalId: 0, // on-chain proposal index — use 0 as default since Convex manages IDs
+              proposalId: proposalIndex >= 0 ? proposalIndex : 0,
               support: vote === "for",
               voteWeight: 1,
             }
@@ -278,17 +283,17 @@ export default function GovernancePage() {
         vote,
         txHash: generateHash(),
       });
-      if (address) {
-        await createNotification({
-          walletAddress: address,
-          type: "governance_vote",
-          title: "Vote Cast",
-          message: `Your vote (${vote.toUpperCase()}) on proposal ${proposalId} has been recorded on-chain.`,
-        });
-      }
+      await createNotification({
+        walletAddress: address,
+        type: "governance_vote",
+        title: "Vote Cast",
+        message: `Your vote (${vote.toUpperCase()}) on proposal ${proposalId} has been recorded.`,
+      });
       toast.success(`Vote cast: ${vote.toUpperCase()}`);
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to cast vote");
+    } finally {
+      setVotingProposalId(null);
     }
   };
 
@@ -296,7 +301,7 @@ export default function GovernancePage() {
     if (!newTitle.trim() || !address) return;
     setSubmitting(true);
     try {
-      // Try real on-chain proposal creation on Arbitrum Sepolia
+      // Try real on-chain proposal creation on Arbitrum/Ethereum Sepolia
       const isOnChainNetwork = (chainId === 421614 || chainId === 11155111) && isContractDeployed("CipherGovernance");
       if (isOnChainNetwork) {
         toast.info("Creating proposal on-chain...");
@@ -334,6 +339,7 @@ export default function GovernancePage() {
   const filtered = (proposals ?? []).filter(p => filter === "all" || p.status === filter);
   const activeCount = (proposals ?? []).filter(p => p.status === "active").length;
   const passedCount = (proposals ?? []).filter(p => p.status === "passed").length;
+  const pendingCount = (proposals ?? []).filter(p => p.status === "pending").length;
   const totalVotes = (proposals ?? []).reduce((sum, p) => sum + p.votesFor + p.votesAgainst, 0);
 
   if (!isConnected) {
@@ -373,7 +379,7 @@ export default function GovernancePage() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
-            <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Protocol Governance — Wave 3</div>
+            <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Protocol Governance</div>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground" style={{ fontFamily: "Space Grotesk" }}>
               On-Chain Governance
             </h1>
@@ -482,16 +488,16 @@ export default function GovernancePage() {
         </AnimatePresence>
 
         {/* Filter tabs */}
-        <div className="flex border-b border-border">
-          {(["all", "active", "passed", "rejected"] as const).map(f => (
+        <div className="flex border-b border-border overflow-x-auto">
+          {(["all", "active", "passed", "rejected", "pending"] as const).map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-4 py-3 font-mono-cipher text-xs uppercase tracking-widest border-b-2 transition-all duration-100 ${
+              className={`px-4 py-3 font-mono-cipher text-xs uppercase tracking-widest border-b-2 transition-all duration-100 shrink-0 ${
                 filter === f ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              {f} {f !== "all" && `(${(proposals ?? []).filter(p => p.status === f).length})`}
+              {f}{f !== "all" && ` (${(proposals ?? []).filter(p => p.status === f).length})`}
             </button>
           ))}
         </div>
@@ -513,6 +519,7 @@ export default function GovernancePage() {
                 proposal={proposal}
                 voterWallet={address ?? ""}
                 onVote={handleVote}
+                voting={votingProposalId}
               />
             ))
           )}
@@ -523,7 +530,7 @@ export default function GovernancePage() {
           {[
             { title: "Voting Power", stat: "1 wallet = 1 vote", desc: "Each connected wallet has equal voting power. Sybil resistance via Fhenix wallet verification." },
             { title: "Quorum", stat: "1,000 votes", desc: "Proposals require 1,000 total votes to reach quorum. Active proposals expire after 7 days." },
-            { title: "Execution", stat: "On-chain", desc: "Passed proposals are executed via the CipherCV governance contract on Fhenix Frontier Testnet." },
+            { title: "Execution", stat: "On-chain", desc: "Passed proposals are executed via the CipherCV governance contract on Arbitrum Sepolia." },
           ].map((item, i) => (
             <div key={item.title} className={`p-6 space-y-2 ${i < 2 ? "border-b md:border-b-0 md:border-r border-border" : ""}`}>
               <div className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest">{item.title}</div>

@@ -286,7 +286,7 @@ export default function ProofExplorerPage() {
         {/* Header */}
         <div className="space-y-1">
           <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">
-            FHE Proof Explorer — Wave 3
+            FHE Proof Explorer
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground" style={{ fontFamily: "Space Grotesk" }}>
             Live Proof Verification

@@ -10,40 +10,39 @@ interface EncryptedInputProps {
   unit?: string;
 }
 
-const HASHES = [
-  "0x7f3a9b2c", "0x9b2c4e1d", "0x3d8e2f1a", "0x5c9f2e8a",
-  "0x1a9c7b4e", "0x8a1b4d7e", "0x2f5e9c3b", "0x4e1d8f5a",
-];
-
-export function EncryptedInput({ label, min = 0, max = 100, value, onChange }: EncryptedInputProps) {
-  const [hashIndex, setHashIndex] = useState(0);
+export function EncryptedInput({ label, min = 0, max = 100, value, onChange, unit }: EncryptedInputProps) {
   const [isChanging, setIsChanging] = useState(false);
 
   useEffect(() => {
     setIsChanging(true);
     const t = setTimeout(() => setIsChanging(false), 300);
-    const interval = setInterval(() => {
-      setHashIndex(i => (i + 1) % HASHES.length);
-    }, 800);
-    return () => { clearTimeout(t); clearInterval(interval); };
+    return () => clearTimeout(t);
   }, [value]);
 
   const percentage = ((value - min) / (max - min)) * 100;
+
+  // Format display value
+  const formatValue = (v: number) => {
+    if (unit) return `${v.toLocaleString()} ${unit}`;
+    if (max >= 10000) return `$${v.toLocaleString()}`;
+    return v.toLocaleString();
+  };
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-xs uppercase tracking-widest text-muted-foreground font-mono-cipher">{label}</span>
         <motion.span
-          key={hashIndex}
-          initial={{ opacity: 0 }}
+          key={value}
+          initial={{ opacity: 0.5 }}
           animate={{ opacity: 1 }}
-          className="encrypted-block"
+          transition={{ duration: 0.2 }}
+          className={`font-mono-cipher text-xs font-bold transition-colors duration-200 ${isChanging ? "text-primary/70" : "text-primary"}`}
         >
-          {isChanging ? "COMPUTING..." : "[ENCRYPTED]"}
+          {isChanging ? "⊕ encrypting..." : formatValue(value)}
         </motion.span>
       </div>
-      <div className="relative h-1 bg-secondary">
+      <div className="relative h-1.5 bg-secondary rounded-none">
         <motion.div
           className="absolute top-0 left-0 h-full bg-primary"
           style={{ width: `${percentage}%` }}
@@ -60,8 +59,8 @@ export function EncryptedInput({ label, min = 0, max = 100, value, onChange }: E
         />
       </div>
       <div className="flex justify-between">
-        <span className="font-mono-cipher text-xs text-muted-foreground">MIN</span>
-        <span className="font-mono-cipher text-xs text-muted-foreground">MAX</span>
+        <span className="font-mono-cipher text-xs text-muted-foreground">{formatValue(min)}</span>
+        <span className="font-mono-cipher text-xs text-muted-foreground">{formatValue(max)}</span>
       </div>
     </div>
   );

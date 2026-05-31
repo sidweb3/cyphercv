@@ -457,7 +457,7 @@ function CounterOfferTab({ address }: { address: string }) {
                     className="flex-1 accent-primary"
                   />
                   <div className="border border-primary/30 bg-primary/5 px-3 py-1.5 font-mono-cipher text-xs text-primary min-w-[80px] text-center">
-                    ████████
+                    ${currentSalary.toLocaleString()}
                   </div>
                 </div>
                 <div className="font-mono-cipher text-muted-foreground" style={{ fontSize: "10px" }}>
@@ -1306,7 +1306,7 @@ export default function CandidatePage() {
                               className="w-full accent-primary"
                             />
                             <div className="border border-primary/30 bg-primary/5 px-3 py-1.5 font-mono-cipher text-xs text-primary text-center">
-                              {fheCommitments.minSalary ? fheCommitments.minSalary : "████████"}
+                              {fheCommitments.minSalary ? fheCommitments.minSalary : `${minSalary.toLocaleString()}`}
                             </div>
                           </div>
                           <div className="space-y-2">
@@ -1321,7 +1321,7 @@ export default function CandidatePage() {
                               className="w-full accent-primary"
                             />
                             <div className="border border-primary/30 bg-primary/5 px-3 py-1.5 font-mono-cipher text-xs text-primary text-center">
-                              {fheCommitments.maxSalary ? fheCommitments.maxSalary : "████████"}
+                              {fheCommitments.maxSalary ? fheCommitments.maxSalary : `${maxSalary.toLocaleString()}`}
                             </div>
                           </div>
                         </div>

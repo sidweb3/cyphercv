@@ -733,7 +733,7 @@ export default function MatchesPage() {
       <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="space-y-1">
-          <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Match Engine — Wave 3</div>
+          <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Match Engine</div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground" style={{ fontFamily: "Space Grotesk" }}>
             Live FHE Matching
           </h1>

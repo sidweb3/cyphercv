@@ -437,7 +437,7 @@ export default function EmployerPage() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
-            <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Employer Dashboard — Wave 3</div>
+            <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Employer Dashboard</div>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground" style={{ fontFamily: "Space Grotesk" }}>Job Postings</h1>
             <p className="text-muted-foreground text-sm">Post encrypted job requirements. Candidates are matched without revealing your budget or their identity.</p>
           </div>

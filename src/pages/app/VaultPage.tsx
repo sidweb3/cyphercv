@@ -355,7 +355,7 @@ export default function VaultPage() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
-            <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">ZK Identity Vault — Wave 3</div>
+            <div className="font-mono-cipher text-xs text-primary uppercase tracking-widest">ZK Identity Vault</div>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground" style={{ fontFamily: "Space Grotesk" }}>
               Encrypted Credentials
             </h1>
