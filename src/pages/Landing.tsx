@@ -578,6 +578,17 @@ function HeroSection() {
                 <img src="https://mintcdn.com/fhenix/QsDx0SV0x2gd-xtZ/logo/dark.svg?fit=max&auto=format&n=QsDx0SV0x2gd-xtZ&q=85&s=85c3ae8ba2fc56ae4f71b99ff75cfefe" alt="Fhenix" className="h-4 w-auto" />
                 <span className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Encrypted</span>
               </motion.a>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1 }}
+                className="inline-flex items-center gap-1 border border-border/40 bg-card/60 px-3 h-9 overflow-hidden"
+              >
+                <div className="overflow-hidden w-20 h-7 flex items-center justify-center">
+                  <img src="/assets/1225_Arbitrum_Logo.png" alt="Arbitrum" className="h-5 w-auto" />
+                </div>
+                <span className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest">Sepolia</span>
+              </motion.div>
             </div>
 
             <h1 className="font-display text-4xl md:text-5xl lg:text-6xl leading-none tracking-tight">
@@ -774,8 +785,9 @@ function HowItWorksSection() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={inView ? { opacity: 1, y: 0 } : {}}
                 transition={{ delay: i * 0.1, duration: 0.4 }}
-                className={`p-8 space-y-4 group hover:bg-secondary/20 transition-colors ${i % 2 === 0 ? "border-b md:border-r border-border" : "border-b border-border"
-                  } ${i >= 2 ? "border-b-0" : ""}`}
+                className={`p-8 space-y-4 group hover:bg-secondary/20 transition-colors ${
+                  i % 2 === 0 ? "border-b md:border-r border-border" : "border-b border-border"
+                } ${i >= 2 ? "border-b-0" : ""}`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -1212,8 +1224,9 @@ function WhoItsForSection() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={inView ? { opacity: 1, y: 0 } : {}}
                 transition={{ delay: i * 0.08, duration: 0.4 }}
-                className={`p-8 space-y-4 group hover:bg-secondary/20 transition-colors ${i % 2 === 0 ? "border-b md:border-r border-border" : "border-b border-border"
-                  } ${i >= 2 ? "border-b-0" : ""}`}
+                className={`p-8 space-y-4 group hover:bg-secondary/20 transition-colors ${
+                  i % 2 === 0 ? "border-b md:border-r border-border" : "border-b border-border"
+                } ${i >= 2 ? "border-b-0" : ""}`}
               >
                 <div className="w-10 h-10 border border-border flex items-center justify-center group-hover:border-primary transition-colors">
                   <Icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
