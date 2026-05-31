@@ -534,7 +534,7 @@ function HeroSection() {
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="flex items-center gap-3">
           <img src="/assets/cypher.jpg" alt="Cipher CV" className="w-7 h-7 object-cover" />
           <span className="font-display text-sm uppercase tracking-widest">Cipher CV</span>
-          <span className="hidden sm:inline font-mono-cipher text-[9px] border border-primary/30 text-primary px-2 py-0.5 uppercase tracking-widest">Live on Arbitrum</span>
+
         </motion.div>
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="flex items-center gap-5">
           <Link to="/app/whitepaper" className="font-mono-cipher text-xs text-muted-foreground hover:text-foreground transition-colors hidden md:block">Whitepaper</Link>
@@ -578,17 +578,7 @@ function HeroSection() {
                 <img src="https://mintcdn.com/fhenix/QsDx0SV0x2gd-xtZ/logo/dark.svg?fit=max&auto=format&n=QsDx0SV0x2gd-xtZ&q=85&s=85c3ae8ba2fc56ae4f71b99ff75cfefe" alt="Fhenix" className="h-4 w-auto" />
                 <span className="font-mono-cipher text-xs text-primary uppercase tracking-widest">Encrypted</span>
               </motion.a>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.1 }}
-                className="inline-flex items-center gap-1 border border-border/40 bg-card/60 px-3 h-9 overflow-hidden"
-              >
-                <div className="overflow-hidden w-20 h-7 flex items-center justify-center">
-                  <img src="/assets/1225_Arbitrum_Logo.png" alt="Arbitrum" className="h-5 w-auto" />
-                </div>
-                <span className="font-mono-cipher text-xs text-muted-foreground uppercase tracking-widest">Sepolia</span>
-              </motion.div>
+
             </div>
 
             <h1 className="font-display text-4xl md:text-5xl lg:text-6xl leading-none tracking-tight">
@@ -785,9 +775,8 @@ function HowItWorksSection() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={inView ? { opacity: 1, y: 0 } : {}}
                 transition={{ delay: i * 0.1, duration: 0.4 }}
-                className={`p-8 space-y-4 group hover:bg-secondary/20 transition-colors ${
-                  i % 2 === 0 ? "border-b md:border-r border-border" : "border-b border-border"
-                } ${i >= 2 ? "border-b-0" : ""}`}
+                className={`p-8 space-y-4 group hover:bg-secondary/20 transition-colors ${i % 2 === 0 ? "border-b md:border-r border-border" : "border-b border-border"
+                  } ${i >= 2 ? "border-b-0" : ""}`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -1105,7 +1094,7 @@ function TestimonialsSection() {
       avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=64&h=64&fit=crop&crop=face",
     },
     {
-      quote: "I was skeptical about the privacy claims. Then I read the whitepaper and verified the contracts on Arbiscan. The math checks out. This is real.",
+      quote: "I was skeptical about the privacy claims. Then I read the whitepaper and verified the contracts on etherscan. The math checks out. This is real.",
       role: "Cryptography Engineer",
       company: "Protocol Labs",
       raise: "+41%",
@@ -1224,9 +1213,8 @@ function WhoItsForSection() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={inView ? { opacity: 1, y: 0 } : {}}
                 transition={{ delay: i * 0.08, duration: 0.4 }}
-                className={`p-8 space-y-4 group hover:bg-secondary/20 transition-colors ${
-                  i % 2 === 0 ? "border-b md:border-r border-border" : "border-b border-border"
-                } ${i >= 2 ? "border-b-0" : ""}`}
+                className={`p-8 space-y-4 group hover:bg-secondary/20 transition-colors ${i % 2 === 0 ? "border-b md:border-r border-border" : "border-b border-border"
+                  } ${i >= 2 ? "border-b-0" : ""}`}
               >
                 <div className="w-10 h-10 border border-border flex items-center justify-center group-hover:border-primary transition-colors">
                   <Icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -1374,12 +1362,12 @@ function TechnicalSection() {
                 Whitepaper <ArrowRight className="w-3 h-3" />
               </Link>
               <a
-                href="https://sepolia.arbiscan.io"
+                href="https://sepolia.etherscan.io"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-mono-cipher text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
               >
-                Arbiscan <ExternalLink className="w-3 h-3" />
+                etherscan <ExternalLink className="w-3 h-3" />
               </a>
             </div>
           </div>
@@ -1406,11 +1394,11 @@ function TechnicalSection() {
                     {copied === c.full ? "Copied!" : c.short}
                   </button>
                   <a
-                    href={`https://sepolia.arbiscan.io/address/${c.full}`}
+                    href={`https://sepolia.etherscan.io/address/${c.full}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-muted-foreground hover:text-primary transition-colors"
-                    title="View on Arbiscan"
+                    title="View on etherscan"
                   >
                     <ExternalLink className="w-3 h-3" />
                   </a>
@@ -1553,8 +1541,8 @@ function Footer() {
             <a href="https://docs.fhenix.zone" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 font-mono-cipher text-xs text-muted-foreground hover:text-primary transition-colors duration-150">
               <ExternalLink className="w-3 h-3 shrink-0" /> Fhenix Docs
             </a>
-            <a href="https://sepolia.arbiscan.io" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 font-mono-cipher text-xs text-muted-foreground hover:text-primary transition-colors duration-150">
-              <ExternalLink className="w-3 h-3 shrink-0" /> Arbiscan Explorer
+            <a href="https://sepolia.etherscan.io" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 font-mono-cipher text-xs text-muted-foreground hover:text-primary transition-colors duration-150">
+              <ExternalLink className="w-3 h-3 shrink-0" /> etherscan Explorer
             </a>
             <a href="https://faucet.quicknode.com/arbitrum/sepolia" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 font-mono-cipher text-xs text-muted-foreground hover:text-primary transition-colors duration-150">
               <ExternalLink className="w-3 h-3 shrink-0" /> Testnet Faucet
